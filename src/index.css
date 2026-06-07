@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+/* Dark-first "Kinetic Darkroom"-adjacent palette (DECISIONS 🔒 11).
+   These map to Tailwind utilities: bg-bg, bg-surface, text-accent, etc. */
+@theme {
+  --color-bg: #0a0a0a;
+  --color-surface: #141414;
+  --color-accent: #00ff66;
+  --color-muted: #8a8a8a;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-bg);
+  color: #e6e6e6;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  /* Prevent iOS rubber-band scroll of the whole app shell. */
+  overscroll-behavior: none;
+}

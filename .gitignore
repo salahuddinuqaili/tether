@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dev-dist/
+
+# Local env (never commit secrets; .env.example is the only tracked env file)
+.env
+.env.local
+.env.*.local
+
+# Logs / OS / editor
+*.log
+npm-debug.log*
+.DS_Store
+.idea/
+.vscode/
