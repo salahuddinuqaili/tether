@@ -31,6 +31,9 @@ Legend: 🔒 LOCKED (from PRD) · ✅ RESOLVED (confirmed this session) · ❓ O
 code execution / terminal / shell on the phone, multi-user / accounts / collaboration,
 per-language tooling beyond CodeMirror defaults.
 
+> Single-user remains locked — but now understood as **single-user *per instance*** (each
+> self-hoster runs their own). A hosted multi-tenant service is deferred, not adopted — see D4 / O5.
+
 ---
 
 ## 2. Open decisions — resolved this session
@@ -62,15 +65,29 @@ touch-first:
 - **Touch:** `EditorView.lineWrapping` ON (no horizontal scroll on a phone); revisit a custom mobile key-accessory bar in a Phase 0 UX spike.
 - **Deliberately deferred:** linting, autocompletion/LSP, multi-cursor, vim mode, search panel — none are MVP, several hurt touch UX.
 
+### ✅ D4 — Distribution posture: open-source & self-hostable; hosted service deferred
+*Confirmed.* tether ships **open source**, designed so anyone can **self-host their own instance** —
+each user brings their own GitHub PAT and their own local model (their Ollama, their tailnet). The
+PRD's single-user design is **preserved and still locked**: single-user *per instance*, not
+multi-tenant. A **hosted multi-user service on shared hardware is explicitly deferred** (see O5),
+not adopted — so none of the multi-user machinery (auth, vLLM concurrency, public exposure) enters
+scope now.
+> **The one delta this forces — configurable from day one, no hardcoded anything:** GitHub PAT,
+> Ollama base URL, model name, and the PWA origin are all **runtime settings**, never baked into
+> source; no personal tailnet hostname / token / origin committed to the repo. Plus standard
+> open-source hygiene (LICENSE, a self-host README). This mostly aligns with choices already made
+> (PAT entered at runtime, settings in IndexedDB).
+
 ---
 
 ## 3. Decisions still genuinely open (flag before the phase that needs them)
 
 | # | Decision | Needed by | Leaning |
 |---|----------|-----------|---------|
-| ❓ O1 | Ollama default model + params (e.g. `qwen2.5-coder:7b` vs `:14b`, context length) | Phase 2 | Whatever the RTX 5070 runs comfortably; make it a runtime setting, not hard-coded. |
+| ❓ O1 | Ollama default model + params (e.g. `qwen2.5-coder:7b` vs `:14b`, context length) | Phase 2 | `qwen2.5-coder:7b` default on 12GB (14B is context-starved); **MUST be a runtime setting** (per D4), not hard-coded. |
 | ❓ O2 | PAT storage hardening (plain IndexedDB vs WebCrypto-wrapped) | Phase 1 | Start plain in IndexedDB (on-device, single-user); note WebCrypto wrap as a Phase 1 stretch. |
 | ❓ O3 | App icon / brand assets source | Phase 0 (manifest needs icons) | Placeholder generated icon set now; real assets later. |
 | ❓ O4 | Custom domain for Pages vs default `*.github.io` | Phase 0 deploy | Default domain for MVP; custom domain is cosmetic. |
+| ❓ O5 | Hosted multi-user service (others use shared hardware) | Deferred — post-MVP, only if pursued | If ever adopted: engine → vLLM/SGLang (batching), add auth, exposure beyond the tailnet (Funnel / real host), abuse + cost controls — and the single-user Non-goal gets revisited. D4's configurability keeps the door open; **do not build now.** |
 
 These do not block Phase 0/1 implementation; resolve at the noted phase.

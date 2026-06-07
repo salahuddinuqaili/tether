@@ -52,6 +52,14 @@ accessory bar (Tab / indent / brackets) is needed.
 **AC:** A short written note in `docs/` recording what works, what's painful, and the decision on a
 key accessory bar — captured before Phase 0 closes.
 
+### P0-T8 — Open-source hygiene (per DECISIONS D4)
+Add a LICENSE, a README with a "self-host setup" section (Tailscale + Ollama + fine-grained PAT
+steps), and confirm **no personal secrets/endpoints are committed** — Ollama base URL, model, PAT,
+and PWA origin are all runtime config, never baked into source. Add `.env.example` only for
+build-time values (e.g. Pages base path).
+**AC:** Repo has a LICENSE + self-host README; a `git grep` finds no tailnet hostname, token, or
+personal origin in tracked files; a fresh cloner could stand up their own instance from the README.
+
 > **Phase 0 done when:** P0-T5 (standalone install) **and** P0-T6 (highlighted, editable buffer)
 > both pass on the real iPhone.
 

@@ -8,7 +8,9 @@ plan; code scaffolding waits for your go-ahead. Stack: Vite + React + TypeScript
 tether/
 ├── PRD.md                      # Product requirements (source spec)
 ├── DECISIONS.md                # Architecture decision record (locked + resolved + open)
-├── README.md                   # What tether is, how to run/deploy, current phase status
+├── LICENSE                     # Open-source license (per DECISIONS D4 — self-hostable by others)
+├── README.md                   # What tether is, self-host setup (Tailscale/Ollama/PAT), phase status
+├── .env.example                # Build-time config ONLY (e.g. Pages base path); never secrets
 ├── docs/                       # Planning artifacts (this folder)
 │   ├── spikes-phase2.md        # Phase 2 infra spikes — gate before any LLM UI
 │   ├── tasks-phase0-1.md       # Single-sitting task breakdown for Phase 0 & 1
@@ -67,4 +69,5 @@ tether/
 ## Notes carried from decisions
 - `src/llm/` is deliberately inert until `docs/spikes-phase2.md` S1–S6 (esp. S2/S3) pass.
 - Hash-based routing in `App.tsx` avoids GitHub Pages deep-link 404s under the sub-path.
+- Per DECISIONS D4: nothing personal in tracked files — Ollama URL / model / PAT / PWA origin are runtime config only; `.env.example` holds build-time values, never secrets.
 - Store choice (Zustand vs. context) is a scaffold-time call, not an architectural one.
