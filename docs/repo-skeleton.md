@@ -18,9 +18,8 @@ tether/
 ├── index.html                  # Vite entry HTML; mounts the React root, apple-touch meta tags
 ├── package.json                # Deps + scripts (dev/build/preview/deploy)
 ├── vite.config.ts              # Vite config: base path for Pages, vite-plugin-pwa (manifest + SW)
-├── tsconfig.json               # TypeScript config
-├── tailwind.config.ts          # Tailwind: dark-first theme, #00FF66 accent token
-├── postcss.config.js           # PostCSS for Tailwind
+├── tsconfig.json               # TypeScript config (bundler mode)
+├── scripts/gen-icons.py        # Dependency-free placeholder PWA icon generator
 ├── .github/
 │   └── workflows/
 │       └── deploy.yml          # Build + deploy dist/ to GitHub Pages on push
@@ -30,7 +29,7 @@ tether/
 └── src/
     ├── main.tsx                # React + service-worker registration entry
     ├── App.tsx                 # Top-level shell, routing/view switch (hash-based for Pages)
-    ├── index.css               # Tailwind directives + global dark styles
+    ├── index.css               # Tailwind v4 import + @theme tokens (#00FF66 accent) + global dark styles
     ├── editor/                 # CodeMirror 6 integration
     │   ├── Editor.tsx          # React wrapper around the CM6 EditorView
     │   ├── extensions.ts       # Curated MVP extension set (DECISIONS.md D3)
@@ -56,7 +55,7 @@ tether/
 - **DECISIONS.md** — why it's built this way; locked + resolved + still-open decisions.
 - **README.md** — orientation + run/deploy + which phase we're in.
 - **docs/** — planning artifacts (spikes, task breakdown, this skeleton).
-- **index.html / vite.config.ts / tsconfig / tailwind / postcss** — Vite + React + Tailwind build config; Pages base path and PWA plugin live in `vite.config.ts`.
+- **index.html / vite.config.ts / tsconfig** — Vite + React + TS build config; Pages base path, PWA plugin, and Tailwind v4 plugin all live in `vite.config.ts` (Tailwind theme tokens are in `src/index.css`).
 - **.github/workflows/deploy.yml** — CI build + Pages deploy (HTTPS, required for install).
 - **public/** — icons + manifest + verbatim static assets.
 - **src/editor/** — CodeMirror 6 surface and its curated extensions/languages.
