@@ -65,6 +65,39 @@ non-authorized context cannot reach it.
 
 ---
 
+## Deployment variant — Ollama in Docker (Windows)
+
+The spikes above assume Ollama runs natively. Containerizing changes **only where S1/S4 config
+lives** (container flags instead of native env vars); the make-or-break gates (S2/S3/S5) are
+unchanged, because **Tailscale Serve still runs on the Windows host, not in the container.**
+
+**Windows specifics:**
+- Docker Desktop with the **WSL2 backend**. The GPU reaches the container via the NVIDIA Windows
+  driver → WSL2 → `--gpus all`. Needs a recent NVIDIA driver; confirm the image's CUDA is new
+  enough for the RTX 5070 (Blackwell / sm_120) — the official `ollama/ollama` image is fine.
+- **Tailscale runs as the native Windows app**, not in the container. `tailscale serve` on the
+  host proxies to the port Docker Desktop publishes to Windows `localhost`.
+- Always-on: `--restart unless-stopped` **plus** Docker Desktop set to start on login.
+
+```bash
+docker run -d --gpus all \
+  -v ollama:/root/.ollama \                     # persist models across container recreate
+  -p 127.0.0.1:11434:11434 \                    # host loopback only; Tailscale Serve is the only network path (tightens S6)
+  -e OLLAMA_HOST=0.0.0.0 \                       # S1, container form
+  -e OLLAMA_ORIGINS=https://<user>.github.io \  # S4, container form
+  --restart unless-stopped --name ollama ollama/ollama
+
+docker exec -it ollama ollama pull qwen2.5-coder:7b
+```
+
+Host (native Windows Tailscale): `tailscale serve --bg https / http://127.0.0.1:11434`
+
+> Native-vs-Docker on Windows is a wash for a solo setup (native Ollama is a one-click
+> installer). Docker earns its keep if you want a reproducible/shareable stack (compose) or
+> expect to switch engines later (vLLM / TabbyAPI ship primarily as images).
+
+---
+
 ## Spike gate (exit criteria for the spike pass)
 
 Proceed to build Phase 2 LLM UI **only if S1–S6 all pass**, with S2 and S3 being the
