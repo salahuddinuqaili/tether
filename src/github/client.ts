@@ -49,6 +49,30 @@ export interface GitTree {
   truncated: boolean
 }
 
+export interface GitHubContentFile {
+  type: 'file' | 'dir' | 'symlink' | 'submodule'
+  // 'base64' for files; 'none' when the file is too large to inline (>1MB) — the
+  // Contents API omits content in that case and the blob must be fetched instead.
+  encoding?: 'base64' | 'none'
+  content?: string
+  sha: string
+  path: string
+  name: string
+  size: number
+}
+
+// Response from a successful Contents-API write (PUT). `content.sha` is the new
+// blob sha to hold for the next commit; `commit.sha` is the commit that landed.
+export interface CommitResult {
+  content: { sha: string; path: string }
+  commit: { sha: string; html_url: string }
+}
+
+// Encode a repo path for a URL without escaping the '/' separators.
+function encodePath(path: string): string {
+  return path.split('/').map(encodeURIComponent).join('/')
+}
+
 interface RequestInitLike {
   method?: string
   body?: unknown
@@ -110,6 +134,38 @@ export class GitHubClient {
       `/repos/${owner}/${repo}/git/trees/${encodeURIComponent(ref)}?recursive=1`,
       { signal },
     )
+  }
+
+  // Read a single file's contents on a ref (P1-T5). Returns base64 content + the
+  // blob sha the caller must hold to commit later.
+  getContents(
+    owner: string,
+    repo: string,
+    path: string,
+    ref: string,
+    signal?: AbortSignal,
+  ): Promise<GitHubContentFile> {
+    return this.request<GitHubContentFile>(
+      `/repos/${owner}/${repo}/contents/${encodePath(path)}?ref=${encodeURIComponent(ref)}`,
+      { signal },
+    )
+  }
+
+  // Create or update a single file (P1-T7). `sha` is the blob being replaced —
+  // omit it only when creating a new file. A stale sha yields HTTP 409, which the
+  // caller re-fetches and retries.
+  putFile(
+    owner: string,
+    repo: string,
+    path: string,
+    body: { message: string; content: string; branch: string; sha?: string },
+    signal?: AbortSignal,
+  ): Promise<CommitResult> {
+    return this.request<CommitResult>(`/repos/${owner}/${repo}/contents/${encodePath(path)}`, {
+      method: 'PUT',
+      body,
+      signal,
+    })
   }
 }
 
