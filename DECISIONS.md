@@ -85,6 +85,23 @@ the editor becomes the surface the agent acts on, not the centerpiece. Phase 0/1
 > Supersedes the PRD §7 "editor + explain-selection panel" framing for Phase 2/3; revisit the PRD when
 > Phase 2 is designed. Does **not** affect Phase 1 (GitHub browse/open/edit/commit is needed regardless).
 
+### ✅ D6 — App state: React Context store (no state library)
+*Scaffold-time call (skeleton pre-authorized).* All app state lives in one `StoreProvider`
+context (`src/state/`); views switch on a `view` field, no router. Avoids a dependency and
+GitHub Pages sub-path routing.
+> Rejected: Zustand (unneeded for one small store), react-router (a view switch suffices).
+
+### ✅ D7 — Commit conflict model: user-resolved on 409 (Contents API)
+*Confirmed for Phase 1.* Single-file commits use the Contents API with the held blob `sha`.
+A stale `sha` returns 409; the app re-fetches the current remote file and makes the user
+choose — **overwrite with my changes** (retry against fresh sha) or **discard & load latest**.
+No silent auto-merge. Git Data API (atomic multi-file) stays Phase 3.
+
+### ✅ D8 (was O2) — PAT storage: plain IndexedDB on-device
+*Confirmed.* Token stored unencrypted in IndexedDB, held in memory only to build the
+`Authorization` header, never logged/committed/displayed. Acceptable for a single-user,
+on-device app. WebCrypto-wrapping remains a low-priority stretch.
+
 ---
 
 ## 3. Decisions still genuinely open (flag before the phase that needs them)
@@ -92,7 +109,6 @@ the editor becomes the surface the agent acts on, not the centerpiece. Phase 0/1
 | # | Decision | Needed by | Leaning |
 |---|----------|-----------|---------|
 | ❓ O1 | Ollama default model + params (e.g. `qwen2.5-coder:7b` vs `:14b`, context length) | Phase 2 | `qwen2.5-coder:7b` default on 12GB (14B is context-starved); **MUST be a runtime setting** (per D4), not hard-coded. |
-| ❓ O2 | PAT storage hardening (plain IndexedDB vs WebCrypto-wrapped) | Phase 1 | Start plain in IndexedDB (on-device, single-user); note WebCrypto wrap as a Phase 1 stretch. |
 | ❓ O3 | App icon / brand assets source | Phase 0 (manifest needs icons) | Placeholder generated icon set now; real assets later. |
 | ❓ O4 | Custom domain for Pages vs default `*.github.io` | Phase 0 deploy | Default domain for MVP; custom domain is cosmetic. |
 | ❓ O5 | Hosted multi-user service (others use shared hardware) | Deferred — post-MVP, only if pursued | If ever adopted: engine → vLLM/SGLang (batching), add auth, exposure beyond the tailnet (Funnel / real host), abuse + cost controls — and the single-user Non-goal gets revisited. D4's configurability keeps the door open; **do not build now.** |
