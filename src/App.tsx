@@ -1,8 +1,10 @@
+import { StoreProvider } from './state/StoreProvider'
+import { useStore } from './state/store'
 import { Editor } from './editor/Editor'
+import { Settings } from './components/Settings'
 
-const SAMPLE = `// tether — Phase 0 skeleton
-// Type here. This buffer is local-only: no GitHub, no LLM yet.
-// Source of truth (GitHub) and your desktop model arrive in Phase 1 & 2.
+const SAMPLE = `// tether — Phase 1
+// PAT + GitHub layer landing here. Open Settings (gear) to connect a token.
 
 function greet(name: string): string {
   return \`hello, \${name}\`
@@ -11,7 +13,9 @@ function greet(name: string): string {
 console.log(greet('tether'))
 `
 
-export default function App() {
+function Shell() {
+  const { view, setView, token, tokenLoaded } = useStore()
+
   return (
     <div className="flex h-full flex-col">
       <header
@@ -20,12 +24,31 @@ export default function App() {
       >
         <span className="h-2.5 w-2.5 rounded-full bg-accent" aria-hidden />
         <h1 className="text-sm font-semibold tracking-wide">tether</h1>
-        <span className="ml-auto text-xs text-white/40">Phase 0 · local buffer</span>
+        <span className="ml-auto flex items-center gap-3 text-xs text-white/40">
+          <span>{tokenLoaded && !token ? 'no token' : 'Phase 1'}</span>
+          <button
+            type="button"
+            onClick={() => setView(view === 'settings' ? 'editor' : 'settings')}
+            className="rounded px-1.5 py-0.5 text-white/60 hover:bg-white/10 hover:text-white"
+            aria-label="Settings"
+            title="Settings"
+          >
+            ⚙
+          </button>
+        </span>
       </header>
 
       <main className="min-h-0 flex-1">
-        <Editor initialDoc={SAMPLE} filename="sample.ts" />
+        {view === 'settings' ? <Settings /> : <Editor initialDoc={SAMPLE} filename="sample.ts" />}
       </main>
     </div>
+  )
+}
+
+export default function App() {
+  return (
+    <StoreProvider>
+      <Shell />
+    </StoreProvider>
   )
 }
