@@ -78,6 +78,13 @@ scope now.
 > open-source hygiene (LICENSE, a self-host README). This mostly aligns with choices already made
 > (PAT entered at runtime, settings in IndexedDB).
 
+### ✅ D5 — Product north star: chat-first agent UX (Phase 2/3)
+*Confirmed.* tether should **feel like chatting with a coding agent** (à la Claude Code on iOS), not an
+editor with an LLM side-panel. Phase 2/3 reframe: a conversation drives edits → diff review → commit;
+the editor becomes the surface the agent acts on, not the centerpiece. Phase 0/1 plumbing is unchanged.
+> Supersedes the PRD §7 "editor + explain-selection panel" framing for Phase 2/3; revisit the PRD when
+> Phase 2 is designed. Does **not** affect Phase 1 (GitHub browse/open/edit/commit is needed regardless).
+
 ---
 
 ## 3. Decisions still genuinely open (flag before the phase that needs them)
