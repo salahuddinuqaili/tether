@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useStore } from '../state/store'
 import { GitHubError, type GitHubBranch, type GitHubRepo } from '../github/client'
+import { FileTree } from './FileTree'
 
 // Repo + branch selection (P1-T3). Pick a repo by typing `owner/repo` or from
 // the list the token can see; the default branch is preselected. The tree
@@ -41,10 +42,13 @@ export function Browse() {
             list={() => client!.listBranches(repo.owner, repo.name)}
           />
 
-          {/* P1-T4 mounts the file tree here. */}
-          <div className="rounded-lg border border-dashed border-white/10 p-4 text-center text-xs text-muted">
-            File tree lands here (P1-T4).
-          </div>
+          <FileTree
+            client={client!}
+            owner={repo.owner}
+            repo={repo.name}
+            branch={branch ?? repo.defaultBranch}
+            onOpenFile={(path) => console.info('open file (P1-T5):', path)}
+          />
         </div>
       )}
     </div>
