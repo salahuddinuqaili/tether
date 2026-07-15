@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { clearToken, getToken, setToken } from '../storage/tokens'
 import { clearSelection, getSelection, saveSelection } from '../storage/selection'
+import { clearSession, loadSession, saveSession } from '../storage/buffers'
 import { GitHubClient, GitHubError, type GitHubUser } from '../github/client'
 import { decodeBase64ToText, encodeTextToBase64 } from '../lib/base64'
 import {
@@ -41,29 +42,57 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const clientRef = useRef(client)
   clientRef.current = client
 
-  // Restore the PAT + last repo/branch from IndexedDB on first mount. With a
-  // token we land on Browse (or Settings if none) so the flow starts at "pick a
-  // repo"; the remembered selection reopens where the user left off.
+  // Restore the PAT + last repo/branch from IndexedDB and any unsaved editing
+  // session from OPFS on first mount (P1-T8). A restored session reopens the exact
+  // file + buffer (including unsaved edits) with no network call; otherwise we
+  // land on Browse so the flow starts at "pick a repo".
   useEffect(() => {
     let cancelled = false
-    Promise.all([getToken(), getSelection()]).then(([storedToken, storedSelection]) => {
-      if (cancelled) return
-      setTokenState(storedToken ?? null)
-      if (storedSelection) {
-        setRepo({
-          owner: storedSelection.owner,
-          name: storedSelection.name,
-          defaultBranch: storedSelection.defaultBranch,
-        })
-        setBranchState(storedSelection.branch)
-      }
-      setView(storedToken ? 'browse' : 'settings')
-      setTokenLoaded(true)
-    })
+    Promise.all([getToken(), getSelection(), loadSession()]).then(
+      ([storedToken, storedSelection, session]) => {
+        if (cancelled) return
+        setTokenState(storedToken ?? null)
+
+        if (session) {
+          // The session carries its own repo/branch context so the editor and a
+          // later commit target the right place even if it differs from selection.
+          setRepo(session.repo)
+          setBranchState(session.branch)
+          setOpenFile(session.file)
+          setBuffer(session.buffer)
+        } else if (storedSelection) {
+          setRepo({
+            owner: storedSelection.owner,
+            name: storedSelection.name,
+            defaultBranch: storedSelection.defaultBranch,
+          })
+          setBranchState(storedSelection.branch)
+        }
+
+        setView(storedToken ? (session ? 'editor' : 'browse') : 'settings')
+        setTokenLoaded(true)
+      },
+    )
     return () => {
       cancelled = true
     }
   }, [])
+
+  // Persist the editing session to OPFS whenever the open file or buffer changes,
+  // debounced so typing doesn't hammer the filesystem. Clearing the file clears
+  // the cache. Skipped until the initial restore has run, so we never overwrite a
+  // stored session with the empty startup state.
+  useEffect(() => {
+    if (!tokenLoaded) return
+    if (!openFile || !repo || !branch) {
+      void clearSession()
+      return
+    }
+    const id = setTimeout(() => {
+      void saveSession({ repo, branch, file: openFile, buffer })
+    }, 400)
+    return () => clearTimeout(id)
+  }, [tokenLoaded, openFile, buffer, repo, branch])
 
   // Validate the token whenever it changes by resolving GET /user (P1-T2).
   useEffect(() => {
