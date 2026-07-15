@@ -21,6 +21,19 @@ export interface GitHubUser {
   avatar_url: string
 }
 
+export interface GitHubRepo {
+  full_name: string
+  name: string
+  owner: { login: string }
+  default_branch: string
+  private: boolean
+}
+
+export interface GitHubBranch {
+  name: string
+  commit: { sha: string }
+}
+
 interface RequestInitLike {
   method?: string
   body?: unknown
@@ -56,6 +69,22 @@ export class GitHubClient {
   // Validate the PAT by resolving the authenticated user (P1-T2).
   getUser(signal?: AbortSignal): Promise<GitHubUser> {
     return this.request<GitHubUser>('/user', { signal })
+  }
+
+  // Repos the token can see, most-recently-pushed first (P1-T3). A fine-grained
+  // PAT only returns repos it was granted, which is exactly what we want to list.
+  listRepos(signal?: AbortSignal): Promise<GitHubRepo[]> {
+    return this.request<GitHubRepo[]>('/user/repos?per_page=100&sort=pushed', { signal })
+  }
+
+  // Resolve a single repo (used to discover its default branch) — also the
+  // access check when a repo is typed in as `owner/name`.
+  getRepo(owner: string, repo: string, signal?: AbortSignal): Promise<GitHubRepo> {
+    return this.request<GitHubRepo>(`/repos/${owner}/${repo}`, { signal })
+  }
+
+  listBranches(owner: string, repo: string, signal?: AbortSignal): Promise<GitHubBranch[]> {
+    return this.request<GitHubBranch[]>(`/repos/${owner}/${repo}/branches?per_page=100`, { signal })
   }
 }
 
