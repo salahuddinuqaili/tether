@@ -7,8 +7,17 @@ import { FileTree } from './FileTree'
 // the list the token can see; the default branch is preselected. The tree
 // (P1-T4) renders below once a repo + branch are chosen.
 export function Browse() {
-  const { client, repo, branch, openFile, selectRepo, setBranch, clearRepo, openFileFromGitHub } =
+  const { client, repo, branch, openFile, dirty, selectRepo, setBranch, clearRepo, openFileFromGitHub } =
     useStore()
+
+  // Opening a different file replaces the buffer, so confirm before discarding
+  // unsaved edits (P1-T6). Re-tapping the already-open file is a no-op prompt.
+  function handleOpenFile(path: string) {
+    if (dirty && openFile && path !== openFile.path) {
+      if (!window.confirm(`Discard unsaved changes to ${openFile.name}?`)) return
+    }
+    void openFileFromGitHub(path)
+  }
 
   return (
     <div className="mx-auto flex h-full w-full max-w-md flex-col gap-4 overflow-y-auto p-5">
@@ -48,7 +57,7 @@ export function Browse() {
             owner={repo.owner}
             repo={repo.name}
             branch={branch ?? repo.defaultBranch}
-            onOpenFile={openFileFromGitHub}
+            onOpenFile={handleOpenFile}
             activePath={openFile?.path}
           />
         </div>
