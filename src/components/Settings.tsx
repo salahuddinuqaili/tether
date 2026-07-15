@@ -5,7 +5,7 @@ import { useStore } from '../state/store'
 // IndexedDB via the store; this component never logs it and never renders it
 // back — once saved we show only a masked "connected" state.
 export function Settings() {
-  const { token, saveToken, removeToken, setView } = useStore()
+  const { token, auth, user, authError, saveToken, removeToken, setView } = useStore()
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -46,10 +46,26 @@ export function Settings() {
 
       {token ? (
         <div className="flex flex-col gap-3 rounded-lg border border-white/10 bg-surface p-4">
-          <div className="flex items-center gap-2 text-sm">
-            <span className="h-2 w-2 rounded-full bg-accent" aria-hidden />
-            <span>Token stored on this device</span>
-          </div>
+          {auth === 'checking' && (
+            <div className="flex items-center gap-2 text-sm text-muted">
+              <span className="h-2 w-2 rounded-full bg-white/40" aria-hidden />
+              <span>Verifying token…</span>
+            </div>
+          )}
+          {auth === 'valid' && user && (
+            <div className="flex items-center gap-2 text-sm">
+              <img src={user.avatar_url} alt="" className="h-6 w-6 rounded-full" />
+              <span>
+                Connected as <span className="font-semibold text-accent">{user.login}</span>
+              </span>
+            </div>
+          )}
+          {auth === 'invalid' && (
+            <div className="flex items-center gap-2 text-sm text-red-400">
+              <span className="h-2 w-2 rounded-full bg-red-500" aria-hidden />
+              <span>{authError ?? 'Token could not be verified.'}</span>
+            </div>
+          )}
           <p className="text-xs text-muted">
             Hidden for safety — tether never displays a stored token. Remove it to paste a new one.
           </p>
