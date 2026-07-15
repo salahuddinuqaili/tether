@@ -25,6 +25,13 @@ export interface OpenFile {
   baseContent: string
 }
 
+// The remote file as it stands now, re-fetched after a 409 stale-sha commit
+// (P1-T7). `remoteSha` is the current blob sha to commit against on retry.
+export interface ShaConflict {
+  remoteSha: string
+  remoteContent: string
+}
+
 export interface Store {
   // --- auth / PAT (P1-T1) ---
   // In-memory copy of the on-device PAT for the session, used only to build the
@@ -64,6 +71,21 @@ export interface Store {
   openFileFromGitHub: (path: string) => Promise<void>
   updateBuffer: (text: string) => void
   closeFile: () => void
+
+  // --- commit (P1-T7) ---
+  committing: boolean
+  commitError: string | null
+  // Set when a commit hits HTTP 409 because the held sha is stale (the file
+  // changed on GitHub since it was opened). Carries the freshly re-fetched
+  // remote state so the user can resolve it. Null when there is no conflict.
+  conflict: ShaConflict | null
+  // Commit the buffer with the held sha. Resolves true on success; on a 409 it
+  // re-fetches the remote file, populates `conflict`, and resolves false.
+  commitFile: (message: string) => Promise<boolean>
+  // Conflict resolution: keep local edits and commit over the new remote sha.
+  overwriteRemote: (message: string) => Promise<boolean>
+  // Conflict resolution: drop local edits and load the latest remote content.
+  discardAndReload: () => void
 
   // --- navigation ---
   view: View
