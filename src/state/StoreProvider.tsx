@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { clearToken, getToken, setToken } from '../storage/tokens'
+import { clearSelection, getSelection, saveSelection } from '../storage/selection'
 import { GitHubClient, GitHubError, type GitHubUser } from '../github/client'
-import { StoreContext, type AuthState, type Store, type View } from './store'
+import { StoreContext, type AuthState, type RepoRef, type Store, type View } from './store'
 
 // Holds all app state and wires it to on-device persistence. Grows per Phase 1
 // task (repo/branch/tree/open-file come later); P1-T1/T2 handle PAT + auth.
@@ -14,17 +15,31 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<GitHubUser | null>(null)
   const [authError, setAuthError] = useState<string | null>(null)
 
+  const [repo, setRepo] = useState<RepoRef | null>(null)
+  const [branch, setBranchState] = useState<string | null>(null)
+
   // A client is derived from the token; every GitHub call goes through it.
   const client = useMemo(() => (token ? new GitHubClient(token) : null), [token])
+  const clientRef = useRef(client)
+  clientRef.current = client
 
-  // Restore the PAT from IndexedDB on first mount. If one exists we land on the
-  // editor; otherwise we open Settings so the user can paste a token.
+  // Restore the PAT + last repo/branch from IndexedDB on first mount. With a
+  // token we land on Browse (or Settings if none) so the flow starts at "pick a
+  // repo"; the remembered selection reopens where the user left off.
   useEffect(() => {
     let cancelled = false
-    getToken().then((stored) => {
+    Promise.all([getToken(), getSelection()]).then(([storedToken, storedSelection]) => {
       if (cancelled) return
-      setTokenState(stored ?? null)
-      setView(stored ? 'editor' : 'settings')
+      setTokenState(storedToken ?? null)
+      if (storedSelection) {
+        setRepo({
+          owner: storedSelection.owner,
+          name: storedSelection.name,
+          defaultBranch: storedSelection.defaultBranch,
+        })
+        setBranchState(storedSelection.branch)
+      }
+      setView(storedToken ? 'browse' : 'settings')
       setTokenLoaded(true)
     })
     return () => {
@@ -76,10 +91,34 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       auth,
       user,
       authError,
+      repo,
+      branch,
+      async selectRepo(owner: string, name: string) {
+        const c = clientRef.current
+        if (!c) throw new GitHubError(401, 'No token — add a PAT in Settings first.')
+        const resolved = await c.getRepo(owner, name)
+        const ref: RepoRef = {
+          owner: resolved.owner.login,
+          name: resolved.name,
+          defaultBranch: resolved.default_branch,
+        }
+        setRepo(ref)
+        setBranchState(resolved.default_branch)
+        await saveSelection({ ...ref, branch: resolved.default_branch })
+      },
+      setBranch(next: string) {
+        setBranchState(next)
+        if (repo) void saveSelection({ ...repo, branch: next })
+      },
+      clearRepo() {
+        setRepo(null)
+        setBranchState(null)
+        void clearSelection()
+      },
       view,
       setView,
     }),
-    [token, tokenLoaded, client, auth, user, authError, view],
+    [token, tokenLoaded, client, auth, user, authError, repo, branch, view],
   )
 
   return <StoreContext.Provider value={store}>{children}</StoreContext.Provider>

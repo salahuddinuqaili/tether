@@ -8,6 +8,13 @@ export type View = 'settings' | 'browse' | 'editor'
 // Result of validating the PAT against GET /user (P1-T2).
 export type AuthState = 'idle' | 'checking' | 'valid' | 'invalid'
 
+// The repo the user is browsing/editing, plus its default branch (P1-T3).
+export interface RepoRef {
+  owner: string
+  name: string
+  defaultBranch: string
+}
+
 export interface Store {
   // --- auth / PAT (P1-T1) ---
   // In-memory copy of the on-device PAT for the session, used only to build the
@@ -26,6 +33,15 @@ export interface Store {
   auth: AuthState
   user: GitHubUser | null
   authError: string | null
+
+  // --- repo + branch selection (P1-T3) ---
+  repo: RepoRef | null
+  branch: string | null
+  // Resolves the repo (validating access + discovering its default branch),
+  // selects it, and preselects the default branch. Throws GitHubError on 404.
+  selectRepo: (owner: string, name: string) => Promise<void>
+  setBranch: (branch: string) => void
+  clearRepo: () => void
 
   // --- navigation ---
   view: View
