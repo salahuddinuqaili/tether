@@ -2,12 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { clearToken, getToken, setToken } from '../storage/tokens'
 import { clearSelection, getSelection, saveSelection } from '../storage/selection'
 import { GitHubClient, GitHubError, type GitHubUser } from '../github/client'
-import { decodeBase64ToText } from '../lib/base64'
+import { decodeBase64ToText, encodeTextToBase64 } from '../lib/base64'
 import {
   StoreContext,
   type AuthState,
   type OpenFile,
   type RepoRef,
+  type ShaConflict,
   type Store,
   type View,
 } from './store'
@@ -30,6 +31,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [buffer, setBuffer] = useState('')
   const [openLoading, setOpenLoading] = useState(false)
   const [openError, setOpenError] = useState<string | null>(null)
+
+  const [committing, setCommitting] = useState(false)
+  const [commitError, setCommitError] = useState<string | null>(null)
+  const [conflict, setConflict] = useState<ShaConflict | null>(null)
 
   // A client is derived from the token; every GitHub call goes through it.
   const client = useMemo(() => (token ? new GitHubClient(token) : null), [token])
@@ -88,8 +93,56 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return () => ctrl.abort()
   }, [client])
 
-  const store = useMemo<Store>(
-    () => ({
+  const store = useMemo<Store>(() => {
+    // Shared commit path for a first attempt and a post-conflict retry. `sha` is
+    // the blob being replaced. On HTTP 409 the held sha is stale, so we re-fetch
+    // the current remote file and expose it as a conflict for the user to resolve
+    // (P1-T7). Returns true only when the commit actually lands.
+    async function runCommit(message: string, sha: string): Promise<boolean> {
+      const c = clientRef.current
+      if (!c || !repo || !branch || !openFile) return false
+      const text = buffer
+      setCommitError(null)
+      setCommitting(true)
+      try {
+        const result = await c.putFile(repo.owner, repo.name, openFile.path, {
+          message,
+          content: encodeTextToBase64(text),
+          branch,
+          sha,
+        })
+        // Success: adopt the new blob sha and reset the baseline to what we just
+        // committed, so the buffer is clean again.
+        setOpenFile({ ...openFile, sha: result.content.sha, baseContent: text })
+        setConflict(null)
+        return true
+      } catch (e) {
+        if (e instanceof GitHubError && e.status === 409) {
+          try {
+            const latest = await c.getContents(repo.owner, repo.name, openFile.path, branch)
+            const remoteContent =
+              latest.encoding === 'base64' && latest.content !== undefined
+                ? decodeBase64ToText(latest.content)
+                : ''
+            setConflict({ remoteSha: latest.sha, remoteContent })
+            setCommitError(
+              'This file changed on GitHub since you opened it. Choose how to resolve below.',
+            )
+          } catch {
+            setCommitError('The file changed on GitHub and could not be re-fetched. Try again.')
+          }
+        } else {
+          setCommitError(
+            e instanceof GitHubError || e instanceof Error ? e.message : 'Commit failed.',
+          )
+        }
+        return false
+      } finally {
+        setCommitting(false)
+      }
+    }
+
+    return {
       token,
       tokenLoaded,
       async saveToken(pat: string) {
@@ -138,6 +191,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         const c = clientRef.current
         if (!c || !repo || !branch) return
         setOpenError(null)
+        setCommitError(null)
+        setConflict(null)
         setOpenLoading(true)
         try {
           const file = await c.getContents(repo.owner, repo.name, path, branch)
@@ -165,26 +220,52 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         setOpenFile(null)
         setBuffer('')
         setOpenError(null)
+        setCommitError(null)
+        setConflict(null)
       },
+
+      committing,
+      commitError,
+      conflict,
+      commitFile(message: string) {
+        if (!openFile) return Promise.resolve(false)
+        return runCommit(message, openFile.sha)
+      },
+      overwriteRemote(message: string) {
+        // Retry against the freshly re-fetched remote sha: local edits win.
+        if (!conflict) return Promise.resolve(false)
+        return runCommit(message, conflict.remoteSha)
+      },
+      discardAndReload() {
+        // Drop local edits and adopt the latest remote content (now clean).
+        if (!openFile || !conflict) return
+        setOpenFile({ ...openFile, sha: conflict.remoteSha, baseContent: conflict.remoteContent })
+        setBuffer(conflict.remoteContent)
+        setConflict(null)
+        setCommitError(null)
+      },
+
       view,
       setView,
-    }),
-    [
-      token,
-      tokenLoaded,
-      client,
-      auth,
-      user,
-      authError,
-      repo,
-      branch,
-      openFile,
-      buffer,
-      openLoading,
-      openError,
-      view,
-    ],
-  )
+    }
+  }, [
+    token,
+    tokenLoaded,
+    client,
+    auth,
+    user,
+    authError,
+    repo,
+    branch,
+    openFile,
+    buffer,
+    openLoading,
+    openError,
+    committing,
+    commitError,
+    conflict,
+    view,
+  ])
 
   return <StoreContext.Provider value={store}>{children}</StoreContext.Provider>
 }
