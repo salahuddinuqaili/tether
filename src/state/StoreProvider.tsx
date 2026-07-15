@@ -2,7 +2,15 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { clearToken, getToken, setToken } from '../storage/tokens'
 import { clearSelection, getSelection, saveSelection } from '../storage/selection'
 import { GitHubClient, GitHubError, type GitHubUser } from '../github/client'
-import { StoreContext, type AuthState, type RepoRef, type Store, type View } from './store'
+import { decodeBase64ToText } from '../lib/base64'
+import {
+  StoreContext,
+  type AuthState,
+  type OpenFile,
+  type RepoRef,
+  type Store,
+  type View,
+} from './store'
 
 // Holds all app state and wires it to on-device persistence. Grows per Phase 1
 // task (repo/branch/tree/open-file come later); P1-T1/T2 handle PAT + auth.
@@ -17,6 +25,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const [repo, setRepo] = useState<RepoRef | null>(null)
   const [branch, setBranchState] = useState<string | null>(null)
+
+  const [openFile, setOpenFile] = useState<OpenFile | null>(null)
+  const [buffer, setBuffer] = useState('')
+  const [openLoading, setOpenLoading] = useState(false)
+  const [openError, setOpenError] = useState<string | null>(null)
 
   // A client is derived from the token; every GitHub call goes through it.
   const client = useMemo(() => (token ? new GitHubClient(token) : null), [token])
@@ -115,10 +128,62 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         setBranchState(null)
         void clearSelection()
       },
+
+      openFile,
+      buffer,
+      openLoading,
+      openError,
+      dirty: openFile ? buffer !== openFile.baseContent : false,
+      async openFileFromGitHub(path: string) {
+        const c = clientRef.current
+        if (!c || !repo || !branch) return
+        setOpenError(null)
+        setOpenLoading(true)
+        try {
+          const file = await c.getContents(repo.owner, repo.name, path, branch)
+          if (file.encoding !== 'base64' || file.content === undefined) {
+            throw new Error('This file is too large to open on tether (over 1MB).')
+          }
+          const text = decodeBase64ToText(file.content)
+          setOpenFile({ path: file.path, name: file.name, sha: file.sha, baseContent: text })
+          setBuffer(text)
+          setView('editor')
+        } catch (e) {
+          setOpenError(
+            e instanceof GitHubError || e instanceof Error
+              ? e.message
+              : 'Could not open the file.',
+          )
+        } finally {
+          setOpenLoading(false)
+        }
+      },
+      updateBuffer(text: string) {
+        setBuffer(text)
+      },
+      closeFile() {
+        setOpenFile(null)
+        setBuffer('')
+        setOpenError(null)
+      },
       view,
       setView,
     }),
-    [token, tokenLoaded, client, auth, user, authError, repo, branch, view],
+    [
+      token,
+      tokenLoaded,
+      client,
+      auth,
+      user,
+      authError,
+      repo,
+      branch,
+      openFile,
+      buffer,
+      openLoading,
+      openError,
+      view,
+    ],
   )
 
   return <StoreContext.Provider value={store}>{children}</StoreContext.Provider>

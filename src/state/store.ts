@@ -15,6 +15,16 @@ export interface RepoRef {
   defaultBranch: string
 }
 
+// A file open in the editor (P1-T5). `sha` is the blob sha held for committing;
+// `baseContent` is the content as last known on GitHub — the dirty baseline and
+// what a commit replaces.
+export interface OpenFile {
+  path: string
+  name: string
+  sha: string
+  baseContent: string
+}
+
 export interface Store {
   // --- auth / PAT (P1-T1) ---
   // In-memory copy of the on-device PAT for the session, used only to build the
@@ -42,6 +52,18 @@ export interface Store {
   selectRepo: (owner: string, name: string) => Promise<void>
   setBranch: (branch: string) => void
   clearRepo: () => void
+
+  // --- open file + editor buffer (P1-T5/T6) ---
+  openFile: OpenFile | null
+  // Current editor contents; the source of truth for dirty state and commits.
+  buffer: string
+  openLoading: boolean
+  openError: string | null
+  // True when the buffer diverges from the file's GitHub baseline.
+  dirty: boolean
+  openFileFromGitHub: (path: string) => Promise<void>
+  updateBuffer: (text: string) => void
+  closeFile: () => void
 
   // --- navigation ---
   view: View

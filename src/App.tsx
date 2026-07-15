@@ -1,18 +1,8 @@
 import { StoreProvider } from './state/StoreProvider'
 import { useStore } from './state/store'
-import { Editor } from './editor/Editor'
 import { Settings } from './components/Settings'
 import { Browse } from './components/Browse'
-
-const SAMPLE = `// tether — Phase 1
-// Open Settings (gear) to connect a token, then Browse to open a repo file.
-
-function greet(name: string): string {
-  return \`hello, \${name}\`
-}
-
-console.log(greet('tether'))
-`
+import { EditorPane } from './components/EditorPane'
 
 function Shell() {
   const { view, setView, repo, branch, token, tokenLoaded } = useStore()
@@ -62,7 +52,7 @@ function Shell() {
       <main className="min-h-0 flex-1">
         {view === 'settings' && <Settings />}
         {view === 'browse' && <Browse />}
-        {view === 'editor' && <Editor initialDoc={SAMPLE} filename="sample.ts" />}
+        {view === 'editor' && <EditorPane />}
       </main>
     </div>
   )

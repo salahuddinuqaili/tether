@@ -7,7 +7,8 @@ import { FileTree } from './FileTree'
 // the list the token can see; the default branch is preselected. The tree
 // (P1-T4) renders below once a repo + branch are chosen.
 export function Browse() {
-  const { client, repo, branch, selectRepo, setBranch, clearRepo } = useStore()
+  const { client, repo, branch, openFile, selectRepo, setBranch, clearRepo, openFileFromGitHub } =
+    useStore()
 
   return (
     <div className="mx-auto flex h-full w-full max-w-md flex-col gap-4 overflow-y-auto p-5">
@@ -47,7 +48,8 @@ export function Browse() {
             owner={repo.owner}
             repo={repo.name}
             branch={branch ?? repo.defaultBranch}
-            onOpenFile={(path) => console.info('open file (P1-T5):', path)}
+            onOpenFile={openFileFromGitHub}
+            activePath={openFile?.path}
           />
         </div>
       )}
