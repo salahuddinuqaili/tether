@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { StoreProvider } from './state/StoreProvider'
 import { useStore } from './state/store'
 import { Settings } from './components/Settings'
@@ -5,7 +6,19 @@ import { Browse } from './components/Browse'
 import { EditorPane } from './components/EditorPane'
 
 function Shell() {
-  const { view, setView, repo, branch, token, tokenLoaded } = useStore()
+  const { view, setView, repo, branch, token, tokenLoaded, dirty } = useStore()
+
+  // Warn on reload/close/tab-away while there are unsaved edits (P1-T6). OPFS
+  // (P1-T8) makes this recoverable, but the prompt still prevents surprise loss.
+  useEffect(() => {
+    if (!dirty) return
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [dirty])
 
   return (
     <div className="flex h-full flex-col">
