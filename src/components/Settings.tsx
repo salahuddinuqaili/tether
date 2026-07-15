@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useStore } from '../state/store'
+import { ConnectionTest } from './ConnectionTest'
 
 // PAT entry + on-device storage UI (P1-T1). The token is written straight to
 // IndexedDB via the store; this component never logs it and never renders it
@@ -109,6 +110,8 @@ export function Settings() {
           </a>
         </form>
       )}
+
+      <ConnectionTest />
 
       <button
         type="button"
