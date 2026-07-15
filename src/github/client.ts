@@ -34,6 +34,21 @@ export interface GitHubBranch {
   commit: { sha: string }
 }
 
+export interface GitTreeEntry {
+  path: string
+  mode: string
+  type: 'blob' | 'tree' | 'commit'
+  sha: string
+  size?: number
+}
+
+export interface GitTree {
+  sha: string
+  tree: GitTreeEntry[]
+  // GitHub caps a recursive tree response; if true the listing is incomplete.
+  truncated: boolean
+}
+
 interface RequestInitLike {
   method?: string
   body?: unknown
@@ -85,6 +100,16 @@ export class GitHubClient {
 
   listBranches(owner: string, repo: string, signal?: AbortSignal): Promise<GitHubBranch[]> {
     return this.request<GitHubBranch[]>(`/repos/${owner}/${repo}/branches?per_page=100`, { signal })
+  }
+
+  // Whole-repo tree for a ref in one call (P1-T4). The git/trees endpoint accepts
+  // a branch name and resolves it to that branch's tree; `recursive=1` returns
+  // every path. May come back `truncated` for very large repos.
+  getTree(owner: string, repo: string, ref: string, signal?: AbortSignal): Promise<GitTree> {
+    return this.request<GitTree>(
+      `/repos/${owner}/${repo}/git/trees/${encodeURIComponent(ref)}?recursive=1`,
+      { signal },
+    )
   }
 }
 
