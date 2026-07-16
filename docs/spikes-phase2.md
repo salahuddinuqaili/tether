@@ -1,5 +1,23 @@
 # Phase 2 infra spikes — VALIDATE BEFORE BUILDING ANY LLM UI
 
+> ## ✅ GATE PASSED — 2026-07-16
+> Validated on the desktop `sapne` + the real iPhone (installed PWA):
+> - **S1** ✅ Ollama serving (`qwen2.5-coder:14b`, `deepseek-r1:14b`, …).
+> - **S2** ✅ `tailscale serve --bg 11434` → `https://sapne.taild21859.ts.net`, valid cert,
+>   Ollama JSON. Required enabling Serve in the admin console **and** `OLLAMA_HOST=0.0.0.0`
+>   (Ollama's DNS-rebinding Host-check returns 403 for the `*.ts.net` Host otherwise; note
+>   `OLLAMA_ORIGINS` is CORS-only and does **not** affect the Host-check).
+> - **S3** ✅ the **installed iOS PWA** fetches the endpoint cross-origin — no security block.
+> - **S4** ✅ CORS: `Access-Control-Allow-Origin` = the github.io origin; `/api/chat` preflight 204.
+> - **S5** ⏳ streaming-through-Serve — validate as build task P2-T2.
+> - **S6** ⏳ ACL hardening — optional follow-up (`OLLAMA_HOST=0.0.0.0` binds all interfaces;
+>   rely on Windows Firewall + tailnet ACLs).
+>
+> Endpoint + model are **runtime config, never committed** (D4). Setup captured in the
+> `phase2-transport-config` memory. **Green light to build Phase 2** — see `SPEC.md`.
+
+
+
 These spikes de-risk the §5 critical infra decisions. **Run them in order, before a single
 line of LLM-feature UI is written.** Phase 2's whole premise is that an HTTPS PWA on a phone
 can reach `http`-native Ollama on the desktop. If that premise fails, the architecture
