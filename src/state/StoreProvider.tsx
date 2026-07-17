@@ -148,7 +148,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           message,
           content: encodeTextToBase64(text),
           branch,
-          sha,
+          // Omit sha to CREATE a new file (agent-proposed new files have no sha);
+          // include it to UPDATE an existing one (a stale value still yields 409).
+          ...(sha ? { sha } : {}),
         })
         // Success: adopt the new blob sha and reset the baseline to what we just
         // committed, so the buffer is clean again.
@@ -247,6 +249,42 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             e instanceof GitHubError || e instanceof Error
               ? e.message
               : 'Could not open the file.',
+          )
+        } finally {
+          setOpenLoading(false)
+        }
+      },
+      async openProposedEdit(path: string, newContent: string) {
+        const c = clientRef.current
+        if (!c || !repo || !branch) return
+        setOpenError(null)
+        setCommitError(null)
+        setConflict(null)
+        setOpenLoading(true)
+        try {
+          // Hold the current remote sha + baseline so the commit replaces the right
+          // blob and the diff/dirty baseline is correct. A 404 means a brand-new file.
+          let sha = ''
+          let baseContent = ''
+          try {
+            const file = await c.getContents(repo.owner, repo.name, path, branch)
+            sha = file.sha
+            baseContent =
+              file.encoding === 'base64' && file.content !== undefined
+                ? decodeBase64ToText(file.content)
+                : ''
+          } catch (e) {
+            if (!(e instanceof GitHubError && e.status === 404)) throw e
+          }
+          const name = path.split('/').pop() ?? path
+          setOpenFile({ path, name, sha, baseContent })
+          setBuffer(newContent) // dirty vs baseContent → commit bar appears
+          setView('editor')
+        } catch (e) {
+          setOpenError(
+            e instanceof GitHubError || e instanceof Error
+              ? e.message
+              : 'Could not open the proposed edit.',
           )
         } finally {
           setOpenLoading(false)
