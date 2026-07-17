@@ -102,6 +102,16 @@ No silent auto-merge. Git Data API (atomic multi-file) stays Phase 3.
 `Authorization` header, never logged/committed/displayed. Acceptable for a single-user,
 on-device app. WebCrypto-wrapping remains a low-priority stretch.
 
+### ✅ D9 (Phase 2) — Chat state in a dedicated `ChatProvider`, streaming isolated to the active bubble
+*Confirmed during P2-T3.* Conversation state (`messages`, `agentStatus`, later `proposedEdit`)
+lives in `src/chat/ChatProvider` mounted above the view switch, and per-token deltas go to a
+tiny external store (`src/chat/streaming.ts`) that re-renders **only** the in-flight bubble via
+`useSyncExternalStore`. Rationale: SPEC §3 forbids re-rendering the whole list per token, and the
+global store's single `useMemo` would re-render every consumer on each update. Model/URL config
+already bypass the store, so this keeps that boundary.
+> Rejected: SPEC §5.5's "extend `src/state/store.ts`" for chat — it would jank streaming and bloat
+> the store's 17-entry memo deps. The store still owns the `chat` View + chat-first landing (D5).
+
 ---
 
 ## 3. Decisions still genuinely open (flag before the phase that needs them)

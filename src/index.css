@@ -21,6 +21,46 @@ body {
   color: #e6e6e6;
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
   /* Prevent iOS rubber-band scroll of the whole app shell. */
   overscroll-behavior: none;
+}
+
+/* Chat (SPEC §3). Momentum scrolling for the transcript on iOS. */
+.momentum-scroll {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Fast, non-bouncy bubble entrance (~120ms). Plays once on mount; finalized bubbles
+   stay mounted through the streaming→final swap, so it never replays per turn. */
+@keyframes msg-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-msg-in {
+  animation: msg-in 120ms ease-out;
+}
+
+/* Typing indicator dots. */
+@keyframes dot-pulse {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-msg-in {
+    animation: none;
+  }
 }

@@ -3,7 +3,8 @@ import type { GitHubClient, GitHubUser } from '../github/client'
 
 // Which top-level screen is showing. Kept as simple state (no router) — the app
 // is a small view switch, and GitHub Pages sub-path routing is avoided entirely.
-export type View = 'settings' | 'browse' | 'editor'
+// `chat` is the chat-first home (D5); `editor` is the review/diff surface.
+export type View = 'settings' | 'browse' | 'editor' | 'chat'
 
 // Result of validating the PAT against GET /user (P1-T2).
 export type AuthState = 'idle' | 'checking' | 'valid' | 'invalid'
