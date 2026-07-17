@@ -30,6 +30,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const [openFile, setOpenFile] = useState<OpenFile | null>(null)
   const [buffer, setBuffer] = useState('')
+  const [editorEpoch, setEditorEpoch] = useState(0)
   const [openLoading, setOpenLoading] = useState(false)
   const [openError, setOpenError] = useState<string | null>(null)
 
@@ -225,6 +226,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
       openFile,
       buffer,
+      editorEpoch,
       openLoading,
       openError,
       dirty: openFile ? buffer !== openFile.baseContent : false,
@@ -243,6 +245,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           const text = decodeBase64ToText(file.content)
           setOpenFile({ path: file.path, name: file.name, sha: file.sha, baseContent: text })
           setBuffer(text)
+          setEditorEpoch((n) => n + 1)
           setView('editor')
         } catch (e) {
           setOpenError(
@@ -279,6 +282,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           const name = path.split('/').pop() ?? path
           setOpenFile({ path, name, sha, baseContent })
           setBuffer(newContent) // dirty vs baseContent → commit bar appears
+          setEditorEpoch((n) => n + 1)
           setView('editor')
         } catch (e) {
           setOpenError(
@@ -318,6 +322,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         if (!openFile || !conflict) return
         setOpenFile({ ...openFile, sha: conflict.remoteSha, baseContent: conflict.remoteContent })
         setBuffer(conflict.remoteContent)
+        setEditorEpoch((n) => n + 1)
         setConflict(null)
         setCommitError(null)
       },
@@ -336,6 +341,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     branch,
     openFile,
     buffer,
+    editorEpoch,
     openLoading,
     openError,
     committing,

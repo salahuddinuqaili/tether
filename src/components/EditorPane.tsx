@@ -9,6 +9,7 @@ export function EditorPane() {
   const {
     openFile,
     buffer,
+    editorEpoch,
     dirty,
     openLoading,
     openError,
@@ -73,7 +74,7 @@ export function EditorPane() {
 
       <div className="min-h-0 flex-1">
         <Editor
-          docId={`${openFile.path}@${openFile.sha}`}
+          docId={`${openFile.path}@${openFile.sha}@${editorEpoch}`}
           initialDoc={buffer}
           filename={openFile.name}
           onChange={updateBuffer}
