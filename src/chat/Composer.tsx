@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useChat } from './ChatProvider'
+import { AttachSheet } from './AttachSheet'
 
 // On a touch device the Return key should insert a newline (users tap the send
 // button); on a desktop pointer, Enter sends and Shift+Enter inserts a newline.
@@ -14,8 +15,9 @@ const MAX_TEXTAREA_PX = 140
 // the user bubble on the same frame; the network call happens after. Keeps focus so
 // the keyboard never dismisses mid-conversation (SPEC §3).
 export function Composer() {
-  const { send, stop, status } = useChat()
+  const { send, stop, status, attachments, removeAttachment } = useChat()
   const [text, setText] = useState('')
+  const [sheetOpen, setSheetOpen] = useState(false)
   const taRef = useRef<HTMLTextAreaElement>(null)
   const busy = status === 'streaming' || status === 'reading'
 
@@ -41,7 +43,36 @@ export function Composer() {
       className="border-t border-white/10 bg-bg px-2 pt-2"
       style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0.5rem)' }}
     >
+      {attachments.length > 0 && (
+        <div className="mb-2 flex flex-wrap gap-1.5">
+          {attachments.map((a) => (
+            <span
+              key={a.path}
+              className="flex max-w-full items-center gap-1 rounded-full border border-white/15 bg-surface px-2 py-1 text-xs text-white/80"
+            >
+              <span className="truncate">📎 {a.path}</span>
+              <button
+                type="button"
+                onClick={() => removeAttachment(a.path)}
+                className="shrink-0 text-muted hover:text-white"
+                aria-label={`Remove ${a.path}`}
+              >
+                ✕
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
       <div className="flex items-end gap-2">
+        <button
+          type="button"
+          onClick={() => setSheetOpen(true)}
+          aria-label="Attach a file"
+          title="Attach a file"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 text-white/70 hover:bg-white/10"
+        >
+          <span className="text-base leading-none">＋</span>
+        </button>
         <textarea
           ref={taRef}
           value={text}
@@ -78,6 +109,8 @@ export function Composer() {
           </button>
         )}
       </div>
+
+      {sheetOpen && <AttachSheet onClose={() => setSheetOpen(false)} />}
     </div>
   )
 }

@@ -39,6 +39,10 @@ export interface ChatParams {
   onToken?: (delta: string) => void
   // Force a single buffered response instead of streaming. Defaults to streaming.
   stream?: boolean
+  // Ask thinking-capable models (e.g. qwen3.x) to skip the reasoning channel, so the
+  // answer streams into `content` (which we render) instead of `thinking`. Ignored by
+  // models without a thinking mode. Omitted from the request when undefined.
+  think?: boolean
 }
 
 export interface ChatResponse {
@@ -65,7 +69,7 @@ export class OllamaError extends Error {
 }
 
 export async function chat(params: ChatParams): Promise<ChatResponse> {
-  const { url, model, messages, tools, signal, onToken } = params
+  const { url, model, messages, tools, signal, onToken, think } = params
   const stream = params.stream ?? true
 
   let res: Response
@@ -73,7 +77,13 @@ export async function chat(params: ChatParams): Promise<ChatResponse> {
     res = await fetch(`${url}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model, messages, tools, stream }),
+      body: JSON.stringify({
+        model,
+        messages,
+        stream,
+        ...(tools ? { tools } : {}),
+        ...(think !== undefined ? { think } : {}),
+      }),
       signal,
     })
   } catch (e) {
