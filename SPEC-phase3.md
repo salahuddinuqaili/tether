@@ -7,8 +7,9 @@
 > abstraction + cloud endpoints + chat-page model selection + nav clarity) **without**
 > reversing any locked decision. The desktop-agent endpoint (fam-x / Claude Code),
 > GitHub-editor retirement, and the DECISIONS reversals are **Phase 4** — gated on fam-x
-> exposing a servable API. Multi-chat is **Phase 3.5**. Implement in a **fresh session**;
-> branch `feat/phase-3-providers` off `main`.
+> exposing a servable API. **Multiple concurrent sessions (multi-chat) are IN scope this
+> phase**, elevated from 3.5 per follow-up feedback (2026-07-18). Implement in a **fresh
+> session**; branch `feat/phase-3-providers` off `main`.
 
 ## 1. Goal & stop signal
 
@@ -17,9 +18,10 @@ today) **and** cloud providers (OpenRouter, Anthropic API) — through **one pro
 abstraction**, choose the provider+model **on the chat page**, and navigate the app
 **without guessing**.
 
-**Stop signal:** from the phone, in the chat, switch between a **local Ollama model** and
-a **cloud model (OpenRouter)** using an on-page picker, send a message to each, and get a
-**streamed** reply from both — and it's obvious how to move between Chat / repo / Settings.
+**Stop signal:** from the phone, run **two chat sessions at once** — switch each between a
+**local Ollama model** and a **cloud model (OpenRouter)** with an on-page picker, and get a
+**streamed** reply in each (a cloud session streaming while a second session is live proves
+real concurrency) — and it's obvious how to move between Chat / repo / Settings.
 
 ## 2. Direction context (why this shape)
 
@@ -124,6 +126,32 @@ straight from the browser — same posture as the PAT (D8), but money, not just 
 Store them like the PAT (never logged/committed/displayed); make removal easy; scope/limits
 are the user's call. This is acceptable for single-user; note it in DECISIONS.
 
+### 4.6 Sessions layer — multiple concurrent chats (feedback #5)
+Today's `ChatProvider` assumes **one** conversation (one `messages`, one `AbortController`,
+one global streaming channel in `src/chat/streaming.ts`). Generalize to a **sessions** model:
+
+```ts
+interface Session {
+  id: string
+  title: string                 // derived from the first message
+  endpointId: string            // which configured endpoint (§4.2)
+  model: string
+  messages: UiMessage[]
+  status: AgentStatus
+  // each session owns its own AbortController + streaming buffer (no global singleton)
+}
+```
+- Per-session streaming: replace the single global streaming store with one keyed by session
+  id (the active bubble subscribes to *its* session's channel), preserving the §3 "only the
+  streaming bubble re-renders" guarantee.
+- A **session switcher** (list / tabs) to create, switch, and close chats; persist sessions
+  (OPFS, like the edit session) so they survive reload.
+- **Concurrency is real across endpoints**: sessions bound to different endpoints stream in
+  parallel; sessions on the same Ollama box serialize on the GPU (one model in VRAM) — surface
+  that honestly (a queued indicator), don't pretend otherwise. `OLLAMA_NUM_PARALLEL` can allow
+  some same-box parallelism but is the user's server config, not tether's concern.
+- The model/endpoint picker (§4.3) binds to the **active** session.
+
 ## 5. Build order (each with an acceptance check)
 
 - **S-P3 spikes** — cloud reachability (§3). Gate before UI.
@@ -141,7 +169,13 @@ are the user's call. This is acceptable for single-user; note it in DECISIONS.
   provider/model in chat → the next message uses it (proven for local↔cloud).
 - **P3-T6** Nav redesign + change-repo bug fix. **Acceptance:** on-device, moving between
   Chat/Browse/Settings is obvious; changing repo and backing out never strands you.
-- **Stop signal** at P3-T5 (local↔cloud switch, both stream) + P3-T6 (clear nav).
+- **P3-T7** Sessions layer (§4.6): multiple concurrent chats, each bound to an `{endpoint,
+  model}`, per-session streaming + abort, a switcher, OPFS persistence. **Acceptance:** open
+  two sessions on different endpoints; both stream concurrently; switching between them is
+  instant and each keeps its own history; a same-Ollama-box second session shows a queued
+  state rather than corrupting the first.
+- **Stop signal** at P3-T5 + P3-T7 (two concurrent sessions, local↔cloud, both stream) and
+  P3-T6 (clear nav).
 
 ## 6. Non-goals (Phase 3)
 
@@ -149,9 +183,9 @@ are the user's call. This is acceptable for single-user; note it in DECISIONS.
 - **Retiring GitHub editor / diff / commit** (Phase 4, when the agent replaces it).
 - **The Claude *subscription*** (Phase 4, via Claude Code as an endpoint — NOT by scraping
   claude.ai, and NOT the same as fam-x's API-key routing).
-- **Multi-chat concurrency** (Phase 3.5 — a sessions layer on top of this abstraction; note
-  two chats on one Ollama box serialize on the GPU).
 - **DECISIONS reversals** (no locked decision is reversed this phase; that's Phase 4).
+- **True same-box parallelism** for concurrent Ollama sessions — not tether's job; it surfaces
+  the GPU-serialized reality (queued indicator) rather than working around it.
 
 ## 7. Risks
 
