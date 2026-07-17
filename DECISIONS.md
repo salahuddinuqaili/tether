@@ -112,6 +112,17 @@ already bypass the store, so this keeps that boundary.
 > Rejected: SPEC §5.5's "extend `src/state/store.ts`" for chat — it would jank streaming and bloat
 > the store's 17-entry memo deps. The store still owns the `chat` View + chat-first landing (D5).
 
+### ✅ D10 (Phase 2) — Model-agnostic agent tool-calling (`read_file`)
+*Confirmed during P2-T4 after on-device probing.* The SPEC assumed `qwen2.5-coder` supports Ollama
+tool-calling; it does **not** in this build — it prints the call as JSON in `content` (no structured
+`tool_calls`). Two other pulled models differ: `qwen2.5:7b-instruct` emits native `tool_calls`;
+`qwen3.5:9b` does too but is a *thinking* model that hides the final answer in `thinking`. So the
+agent loop is robust to all three: honor native `tool_calls`, **else** deterministically parse a
+leaked JSON `read_file` call from `content`, and always request `think:false` so answers stream into
+`content`. Verified end-to-end (agent reads a file and uses it) across all three models.
+> Rejected: relying solely on native tool-calling (breaks `qwen2.5-coder`); a pure text-only read
+> protocol (native works for 2/3 and is the more standard path). `@`-attach remains the manual fallback.
+
 ---
 
 ## 3. Decisions still genuinely open (flag before the phase that needs them)
