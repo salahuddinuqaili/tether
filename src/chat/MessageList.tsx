@@ -18,14 +18,18 @@ export function MessageList({ messages }: { messages: UiMessage[] }) {
     if (el) el.scrollTo({ top: el.scrollHeight, behavior })
   }, [])
 
-  // Pin to the bottom as the streaming bubble grows (no list re-render involved).
+  // Stay pinned to the bottom when content grows (streaming) AND when the scroll
+  // viewport itself resizes — the iOS keyboard opening or the composer growing shrinks
+  // it, and without this the latest message would drift out of view (SPEC §3).
   useEffect(() => {
     const content = contentRef.current
-    if (!content) return
+    const scroller = scrollRef.current
+    if (!content || !scroller) return
     const ro = new ResizeObserver(() => {
       if (stickRef.current) scrollToBottom('auto')
     })
     ro.observe(content)
+    ro.observe(scroller)
     return () => ro.disconnect()
   }, [scrollToBottom])
 

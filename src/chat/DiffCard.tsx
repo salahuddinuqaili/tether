@@ -1,9 +1,12 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { useStore } from '../state/store'
 import { GitHubError } from '../github/client'
 import { decodeBase64ToText } from '../lib/base64'
-import { DiffView } from './DiffView'
 import type { ProposedEdit } from './edits'
+
+// Code-split the diff view so @codemirror/merge (a sizeable chunk) loads only when a
+// proposal actually appears — keeping the chat's initial load light on the phone.
+const DiffView = lazy(() => import('./DiffView').then((m) => ({ default: m.DiffView })))
 
 // Inline diff card for one proposed edit. Resolves the baseline (the open file's
 // remote baseline, else a fetch, else empty for a new file), renders the unified
@@ -90,7 +93,9 @@ export function DiffCard({ edit }: { edit: ProposedEdit }) {
       ) : baseline === null ? (
         <p className="px-3 py-2 text-xs text-muted">Loading diff…</p>
       ) : (
-        <DiffView baseline={baseline} proposed={edit.newContent} filename={filename} />
+        <Suspense fallback={<p className="px-3 py-2 text-xs text-muted">Loading diff…</p>}>
+          <DiffView baseline={baseline} proposed={edit.newContent} filename={filename} />
+        </Suspense>
       )}
 
       <div className="flex items-center gap-2 border-t border-white/10 px-3 py-2">
