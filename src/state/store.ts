@@ -65,6 +65,11 @@ export interface Store {
   openFile: OpenFile | null
   // Current editor contents; the source of truth for dirty state and commits.
   buffer: string
+  // Bumped on every programmatic (re)seed of the buffer (open / apply-edit / discard)
+  // so the editor re-seeds even when the path+sha are unchanged (e.g. applying a
+  // second edit to the same file). Plain typing does NOT bump it. Part of the editor
+  // remount key alongside path+sha.
+  editorEpoch: number
   openLoading: boolean
   openError: string | null
   // True when the buffer diverges from the file's GitHub baseline.
