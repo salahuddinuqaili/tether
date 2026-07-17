@@ -123,6 +123,24 @@ leaked JSON `read_file` call from `content`, and always request `think:false` so
 > Rejected: relying solely on native tool-calling (breaks `qwen2.5-coder`); a pure text-only read
 > protocol (native works for 2/3 and is the more standard path). `@`-attach remains the manual fallback.
 
+### ✅ D11 (post-Phase-2 direction) — Pivot: tether becomes a thin client for agent *endpoints*
+*Confirmed 2026-07-17* after the product review (`docs/feedback-2026-07-17-desktop-agent-direction.md`).
+The north star shifts from "smart GitHub editor" to "thin mobile client for capable agent
+endpoints" — local (Ollama) and cloud (OpenRouter, Anthropic API) now, and a **desktop agent**
+(`fam-x` / Claude Code, with real shell/fs/web tools + the Claude subscription) later. **Sequenced
+so nothing is wasted or prematurely deleted:**
+> - **Phase 3 (`SPEC-phase3.md`) — foundation, reverses NO locked decision:** a `Provider`
+>   abstraction behind the Ollama-only client, OpenRouter + Anthropic-API adapters, chat-page
+>   model/endpoint selection, nav clarity. GitHub browse/edit/commit **stays functional.**
+> - **Phase 4 — the desktop agent, gated on `fam-x` exposing a servable API** (today `fam` is a
+>   terminal binary, not a server): this is where 🔒4 (no backend), 🔒3 (GitHub as source of truth),
+>   🔒7 (Ollama-only transport), and the "no code execution / thin-client" non-goals get **reversed**,
+>   and the GitHub editor/diff/commit code retires. **Those reversals are ratified here when Phase 4
+>   is designed — not before.**
+> - **Phase 3.5:** multi-chat (sessions layer on the Provider abstraction).
+> Note: the Claude *subscription* is reachable only via Claude Code / Agent SDK as a desktop endpoint
+> (Phase 4), never by scraping claude.ai; that is distinct from `fam`'s Anthropic **API-key** routing.
+
 ---
 
 ## 3. Decisions still genuinely open (flag before the phase that needs them)
