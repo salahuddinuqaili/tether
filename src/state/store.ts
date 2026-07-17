@@ -3,7 +3,8 @@ import type { GitHubClient, GitHubUser } from '../github/client'
 
 // Which top-level screen is showing. Kept as simple state (no router) — the app
 // is a small view switch, and GitHub Pages sub-path routing is avoided entirely.
-export type View = 'settings' | 'browse' | 'editor'
+// `chat` is the chat-first home (D5); `editor` is the review/diff surface.
+export type View = 'settings' | 'browse' | 'editor' | 'chat'
 
 // Result of validating the PAT against GET /user (P1-T2).
 export type AuthState = 'idle' | 'checking' | 'valid' | 'invalid'
@@ -64,11 +65,20 @@ export interface Store {
   openFile: OpenFile | null
   // Current editor contents; the source of truth for dirty state and commits.
   buffer: string
+  // Bumped on every programmatic (re)seed of the buffer (open / apply-edit / discard)
+  // so the editor re-seeds even when the path+sha are unchanged (e.g. applying a
+  // second edit to the same file). Plain typing does NOT bump it. Part of the editor
+  // remount key alongside path+sha.
+  editorEpoch: number
   openLoading: boolean
   openError: string | null
   // True when the buffer diverges from the file's GitHub baseline.
   dirty: boolean
   openFileFromGitHub: (path: string) => Promise<void>
+  // Open `path` seeded with agent-proposed content so the buffer is dirty vs the
+  // file's true remote baseline — surfacing the Phase 1 commit bar (P2-T5/T6). A
+  // path that doesn't exist yet is treated as a new file (empty baseline, no sha).
+  openProposedEdit: (path: string, newContent: string) => Promise<void>
   updateBuffer: (text: string) => void
   closeFile: () => void
 

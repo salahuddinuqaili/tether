@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
 import { StoreProvider } from './state/StoreProvider'
 import { useStore } from './state/store'
+import { ChatProvider } from './chat/ChatProvider'
+import { Chat } from './chat/Chat'
 import { Settings } from './components/Settings'
 import { Browse } from './components/Browse'
 import { EditorPane } from './components/EditorPane'
@@ -20,6 +22,10 @@ function Shell() {
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
   }, [dirty])
 
+  // Chat is the home screen (D5) and manages its own full-viewport layout so the
+  // composer can pin above the iOS keyboard — it replaces the normal shell chrome.
+  if (view === 'chat') return <Chat />
+
   return (
     <div className="flex h-full flex-col">
       <header
@@ -28,9 +34,9 @@ function Shell() {
       >
         <button
           type="button"
-          onClick={() => setView('browse')}
+          onClick={() => setView('chat')}
           className="flex items-center gap-2"
-          title="Browse repo"
+          title="Chat (home)"
         >
           <span className="h-2.5 w-2.5 rounded-full bg-accent" aria-hidden />
           <h1 className="text-sm font-semibold tracking-wide">tether</h1>
@@ -52,7 +58,7 @@ function Shell() {
           {tokenLoaded && !token && <span>no token</span>}
           <button
             type="button"
-            onClick={() => setView(view === 'settings' ? 'browse' : 'settings')}
+            onClick={() => setView(view === 'settings' ? 'chat' : 'settings')}
             className="rounded px-1.5 py-0.5 text-white/60 hover:bg-white/10 hover:text-white"
             aria-label="Settings"
             title="Settings"
@@ -74,7 +80,9 @@ function Shell() {
 export default function App() {
   return (
     <StoreProvider>
-      <Shell />
+      <ChatProvider>
+        <Shell />
+      </ChatProvider>
     </StoreProvider>
   )
 }
