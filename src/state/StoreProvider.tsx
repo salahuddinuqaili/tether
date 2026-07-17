@@ -69,7 +69,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           setBranchState(storedSelection.branch)
         }
 
-        setView(storedToken ? (session ? 'editor' : 'browse') : 'settings')
+        // Chat-first landing (D5): no token → settings; a restored unsaved editing
+        // session reopens the editor so work isn't lost; a known repo → chat (home);
+        // otherwise browse to pick a repo first.
+        const landing: View = !storedToken
+          ? 'settings'
+          : session
+            ? 'editor'
+            : storedSelection
+              ? 'chat'
+              : 'browse'
+        setView(landing)
         setTokenLoaded(true)
       },
     )
