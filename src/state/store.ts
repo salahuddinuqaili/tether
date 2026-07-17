@@ -70,6 +70,10 @@ export interface Store {
   // True when the buffer diverges from the file's GitHub baseline.
   dirty: boolean
   openFileFromGitHub: (path: string) => Promise<void>
+  // Open `path` seeded with agent-proposed content so the buffer is dirty vs the
+  // file's true remote baseline — surfacing the Phase 1 commit bar (P2-T5/T6). A
+  // path that doesn't exist yet is treated as a new file (empty baseline, no sha).
+  openProposedEdit: (path: string, newContent: string) => Promise<void>
   updateBuffer: (text: string) => void
   closeFile: () => void
 
