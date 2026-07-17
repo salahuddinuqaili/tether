@@ -88,8 +88,11 @@ export async function chat(params: ChatParams): Promise<ChatResponse> {
     })
   } catch (e) {
     if (isAbort(e)) throw e
-    // Network / CORS / cert failure — the browser hides which; give a clear message.
-    throw new OllamaError(e instanceof Error ? e.message : 'Could not reach the model endpoint.')
+    // Network / CORS / cert failure — the browser hides which behind an opaque
+    // "Failed to fetch". Give a phone-friendly, actionable message instead.
+    throw new OllamaError(
+      'Could not reach your model. Check that your desktop is awake and the endpoint URL in Settings is correct.',
+    )
   }
 
   if (!res.ok) {

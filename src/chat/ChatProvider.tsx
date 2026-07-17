@@ -29,6 +29,7 @@ interface ChatContextValue {
   send: (text: string) => void
   stop: () => void
   clear: () => void
+  retry: () => void
   attachFile: (path: string) => Promise<void>
   removeAttachment: (path: string) => void
 }
@@ -102,23 +103,14 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     )
   }, [])
 
-  const send = useCallback(
-    (raw: string) => {
-      const text = raw.trim()
-      if (!text || sendingRef.current) return
+  // Runs the async agent turn for an already-appended assistant placeholder. Shared
+  // by send() (fresh turn) and retry() (re-run the last turn). `history` is the
+  // conversation BEFORE this user turn.
+  const runAssistantTurn = useCallback(
+    (userText: string, assistantId: string, history: UiMessage[]) => {
       sendingRef.current = true
-
-      const userMsg: UiMessage = { id: newId(), role: 'user', content: text }
-      const assistantId = newId()
-      const placeholder: UiMessage = { id: assistantId, role: 'assistant', content: '', streaming: true }
-      const history = messagesRef.current
-
-      // Instant, optimistic: append the user bubble + assistant placeholder in one
-      // commit. The composer clears its own input on the same frame.
-      setMessages((prev) => [...prev, userMsg, placeholder])
       resetStreaming()
       setStatus('streaming')
-
       void (async () => {
         const controller = new AbortController()
         abortRef.current = controller
@@ -130,7 +122,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
               'No model is configured yet. Open Settings, enter your Ollama URL, test the connection, and pick a model.',
               true,
             )
-            setStatus('idle')
+            setStatus('error')
             return
           }
 
@@ -166,7 +158,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
               .filter((m) => !m.streaming && m.content && !m.error)
               .map((m) => ({ role: m.role, content: m.content }) satisfies WireMessage),
             ...(attachMsg ? [attachMsg] : []),
-            { role: 'user', content: text },
+            { role: 'user', content: userText },
           ]
 
           const res = await runAgentTurn({
@@ -199,6 +191,43 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     [finalize, readFile],
   )
 
+  const send = useCallback(
+    (raw: string) => {
+      const text = raw.trim()
+      if (!text || sendingRef.current) return
+
+      const userMsg: UiMessage = { id: newId(), role: 'user', content: text }
+      const assistantId = newId()
+      const placeholder: UiMessage = { id: assistantId, role: 'assistant', content: '', streaming: true }
+      const history = messagesRef.current
+
+      // Instant, optimistic: append the user bubble + assistant placeholder in one
+      // commit. The composer clears its own input on the same frame.
+      setMessages((prev) => [...prev, userMsg, placeholder])
+      runAssistantTurn(text, assistantId, history)
+    },
+    [runAssistantTurn],
+  )
+
+  // Re-run the last user turn after a failure (graceful degradation, P2-T7): drop the
+  // failed assistant bubble and stream a fresh one against the same question — no
+  // duplicate user bubble, so the transcript reads as if the turn just re-ran.
+  const retry = useCallback(() => {
+    if (sendingRef.current) return
+    const msgs = messagesRef.current
+    let i = msgs.length - 1
+    while (i >= 0 && msgs[i].role !== 'user') i--
+    if (i < 0) return
+    const userText = msgs[i].content
+    const history = msgs.slice(0, i)
+    const assistantId = newId()
+    setMessages([
+      ...msgs.slice(0, i + 1),
+      { id: assistantId, role: 'assistant', content: '', streaming: true },
+    ])
+    runAssistantTurn(userText, assistantId, history)
+  }, [runAssistantTurn])
+
   const stop = useCallback(() => {
     abortRef.current?.abort()
   }, [])
@@ -212,8 +241,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const value = useMemo<ChatContextValue>(
-    () => ({ messages, status, attachments, send, stop, clear, attachFile, removeAttachment }),
-    [messages, status, attachments, send, stop, clear, attachFile, removeAttachment],
+    () => ({ messages, status, attachments, send, stop, clear, retry, attachFile, removeAttachment }),
+    [messages, status, attachments, send, stop, clear, retry, attachFile, removeAttachment],
   )
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>

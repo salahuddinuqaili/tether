@@ -15,7 +15,7 @@ const MAX_TEXTAREA_PX = 140
 // the user bubble on the same frame; the network call happens after. Keeps focus so
 // the keyboard never dismisses mid-conversation (SPEC §3).
 export function Composer() {
-  const { send, stop, status, attachments, removeAttachment } = useChat()
+  const { send, stop, status, attachments, removeAttachment, retry } = useChat()
   const [text, setText] = useState('')
   const [sheetOpen, setSheetOpen] = useState(false)
   const taRef = useRef<HTMLTextAreaElement>(null)
@@ -43,6 +43,18 @@ export function Composer() {
       className="border-t border-white/10 bg-bg px-2 pt-2"
       style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0.5rem)' }}
     >
+      {status === 'error' && (
+        <div className="mb-2 flex items-center gap-2 rounded-md border border-red-500/25 bg-red-500/5 px-2.5 py-1.5 text-xs text-red-300">
+          <span className="min-w-0 flex-1">Couldn't reach the model.</span>
+          <button
+            type="button"
+            onClick={retry}
+            className="shrink-0 rounded border border-white/15 px-2 py-0.5 text-white/80 hover:bg-white/10"
+          >
+            Retry
+          </button>
+        </div>
+      )}
       {attachments.length > 0 && (
         <div className="mb-2 flex flex-wrap gap-1.5">
           {attachments.map((a) => (
