@@ -1,6 +1,6 @@
-// UI-facing chat types. Distinct from the wire types in src/llm/client.ts: these
-// carry a stable `id` (for memoized list rendering) and a `streaming` flag for the
-// in-flight assistant bubble.
+// UI-facing chat types. Distinct from the normalized LLM types in
+// src/llm/providers/types.ts: these carry a stable `id` (for memoized list
+// rendering) and a `streaming` flag for the in-flight assistant bubble.
 
 export type ChatRole = 'user' | 'assistant'
 
