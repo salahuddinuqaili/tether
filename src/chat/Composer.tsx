@@ -19,7 +19,7 @@ export function Composer() {
   const [text, setText] = useState('')
   const [sheetOpen, setSheetOpen] = useState(false)
   const taRef = useRef<HTMLTextAreaElement>(null)
-  const busy = status === 'streaming' || status === 'reading'
+  const busy = status === 'streaming' || status === 'reading' || status === 'queued'
 
   // Auto-grow to fit content, capped — runs after the DOM reflects `text`, so
   // clearing on send shrinks it back to one line.

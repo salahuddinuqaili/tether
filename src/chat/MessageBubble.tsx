@@ -1,15 +1,22 @@
-import { memo, useSyncExternalStore } from 'react'
+import { memo, useCallback, useSyncExternalStore } from 'react'
 import { getStreamingText, subscribeStreaming } from './streaming'
 import { parseProposedEdits } from './edits'
 import { DiffCard } from './DiffCard'
 import type { UiMessage } from './types'
 
-// One message. Memoized on the message object: while a turn streams, the placeholder
-// object is stable, so this wrapper does NOT re-render per token — only its
-// <LiveContent> child (which subscribes to the streaming store) does. On finalize
-// the message object changes once, swapping in the parsed content. The wrapper stays
-// mounted across that swap (stable key), so the entrance animation never replays.
-export const MessageBubble = memo(function MessageBubble({ message }: { message: UiMessage }) {
+// One message. Memoized on its props: while a turn streams, the placeholder object
+// (and sessionId) are stable, so this wrapper does NOT re-render per token — only its
+// <LiveContent> child (which subscribes to this session's streaming channel) does. On
+// finalize the message object changes once, swapping in the parsed content. The
+// wrapper stays mounted across that swap (stable key), so the entrance animation
+// never replays.
+export const MessageBubble = memo(function MessageBubble({
+  message,
+  sessionId,
+}: {
+  message: UiMessage
+  sessionId: string
+}) {
   const isUser = message.role === 'user'
   // A finalized assistant turn may carry tether-edit blocks → render prose + diff
   // card(s), and widen the bubble so the diff has room.
@@ -27,7 +34,7 @@ export const MessageBubble = memo(function MessageBubble({ message }: { message:
       style={{ contain: 'content' }}
     >
       {message.streaming ? (
-        <LiveContent />
+        <LiveContent sessionId={sessionId} />
       ) : parsed ? (
         <AssistantContent text={parsed.text} edits={parsed.edits} />
       ) : (
@@ -58,9 +65,12 @@ function AssistantContent({
   )
 }
 
-// Subscribes to the in-flight streaming text; re-renders only itself per token.
-function LiveContent() {
-  const text = useSyncExternalStore(subscribeStreaming, getStreamingText)
+// Subscribes to this session's in-flight streaming channel; re-renders only itself
+// per token, even while other sessions stream into their own channels (SPEC §3).
+function LiveContent({ sessionId }: { sessionId: string }) {
+  const subscribe = useCallback((cb: () => void) => subscribeStreaming(sessionId, cb), [sessionId])
+  const getSnapshot = useCallback(() => getStreamingText(sessionId), [sessionId])
+  const text = useSyncExternalStore(subscribe, getSnapshot)
   if (!text) return <TypingDots />
   return (
     <div className="whitespace-pre-wrap break-words">
