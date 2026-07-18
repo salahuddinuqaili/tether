@@ -1,15 +1,14 @@
 # SPEC — Phase 3: Multi-provider thin client (foundation of the desktop-agent pivot)
 
-> Status: Draft for implementation. Written after the 2026-07-17 product review
-> (`docs/feedback-2026-07-17-desktop-agent-direction.md`) and the direction call:
-> **full pivot** — tether becomes a thin client for capable agent *endpoints*, not a
-> smart GitHub editor. This phase builds the **foundation** for that (the provider
-> abstraction + cloud endpoints + chat-page model selection + nav clarity) **without**
-> reversing any locked decision. The desktop-agent endpoint (fam-x / Claude Code),
-> GitHub-editor retirement, and the DECISIONS reversals are **Phase 4** — gated on fam-x
-> exposing a servable API. **Multiple concurrent sessions (multi-chat) are IN scope this
-> phase**, elevated from 3.5 per follow-up feedback (2026-07-18). Implement in a **fresh
-> session**; branch `feat/phase-3-providers` off `main`.
+> Status: Draft for implementation. Written after the 2026-07-17 product review and the
+> direction call (DECISIONS D11): **full pivot** — tether becomes a thin client for capable
+> agent *endpoints*, not a smart GitHub editor. This phase builds the **foundation** for that
+> (the provider abstraction + cloud endpoints + chat-page model selection + nav clarity)
+> **without** reversing any locked decision. The desktop-agent endpoint, GitHub-editor
+> demotion, and the DECISIONS reversals are **Phase 4** — gated on the agent exposing a
+> servable API. **Multiple concurrent sessions (multi-chat) are IN scope this phase**,
+> elevated from 3.5 per follow-up feedback (2026-07-18). Implement in a **fresh session**;
+> branch `feat/phase-3-providers` off `main`.
 
 ## 1. Goal & stop signal
 
@@ -26,13 +25,13 @@ real concurrency) — and it's obvious how to move between Chat / repo / Setting
 ## 2. Direction context (why this shape)
 
 The review's six points reduce to *one architectural move + three niceties* (full analysis
-in the feedback doc). The move — "let the AI access the desktop + internet" — requires a
+in DECISIONS D11). The move — "let the AI access the desktop + internet" — requires a
 **desktop agent runtime** tether points at instead of raw Ollama; that is **Phase 4** and
-depends on **fam-x** growing an HTTP/SSE agent API (today `fam` is a terminal binary). This
-phase builds everything that is (a) on the direct path to that end-state and (b) reverses
-**no** locked decision, because OpenRouter and the Anthropic API are real, browser-callable
-agent endpoints that let us prove the "tether talks to arbitrary endpoints" thesis **before**
-fam-x is ready.
+depends on that agent growing an HTTP/SSE agent API (a CLI-only agent must grow a server
+first). This phase builds everything that is (a) on the direct path to that end-state and
+(b) reverses **no** locked decision, because OpenRouter and the Anthropic API are real,
+browser-callable agent endpoints that let us prove the "tether talks to arbitrary endpoints"
+thesis **before** that agent is ready.
 
 **Kept, not deleted, this phase:** GitHub browse/open/edit/diff/commit (Phase 1/2) stays
 fully functional — demoted to "one capability," retired only in Phase 4 when the desktop
@@ -179,10 +178,10 @@ interface Session {
 
 ## 6. Non-goals (Phase 3)
 
-- **Desktop-agent endpoint / fam-x / Claude Code** (Phase 4 — gated on fam-x's server).
-- **Retiring GitHub editor / diff / commit** (Phase 4, when the agent replaces it).
+- **Desktop-agent endpoint** (Phase 4 — gated on a desktop agent exposing a servable API).
+- **Demoting GitHub editor / diff / commit** (Phase 4; editing stays, just demoted — see D15).
 - **The Claude *subscription*** (Phase 4, via Claude Code as an endpoint — NOT by scraping
-  claude.ai, and NOT the same as fam-x's API-key routing).
+  claude.ai, and NOT the same as an agent's own API-key routing).
 - **DECISIONS reversals** (no locked decision is reversed this phase; that's Phase 4).
 - **True same-box parallelism** for concurrent Ollama sessions — not tether's job; it surfaces
   the GPU-serialized reality (queued indicator) rather than working around it.
