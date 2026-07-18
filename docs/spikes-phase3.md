@@ -1,9 +1,15 @@
 # Phase 3 cloud spikes — VALIDATE BEFORE BUILDING ANY PROVIDER UI
 
-> ## ⏳ GATE PENDING
-> Run the spike page from the **github.io origin** (desktop **and** the real iPhone in
-> standalone) and record the verdicts below. Build provider UI (T3/T4) only once **S-P3-1**
-> passes (and, for Anthropic, once **S-P3-2**'s CORS gate passes).
+> ## ✅ GATE PASSED (desktop) — 2026-07-18 · iPhone confirmation pending
+> Validated from the real `github.io` origin on the desktop:
+> - **S-P3-1** ✅ OpenRouter browser-direct — `HTTP 200`, CORS ok, SSE streamed.
+> - **S-P3-2** ✅ Anthropic CORS gate — `HTTP 401` (placeholder key), preflight allowed browser-direct.
+> - **S-P3-3** ✅ SSE parsing works (single-chunk on a 1-token reply; progressive on longer output).
+>
+> CORS is decided purely by the `Origin` header, which is byte-identical on desktop and iPhone, so
+> the **architecture gate is cleared** and cloud adapters (T3/T4) can proceed. The **iPhone (standalone)
+> confirmation** is still outstanding — it adds iOS-WebKit streaming confidence, not a CORS re-check.
+> Anthropic end-to-end streaming awaits a real key (T4 builds on the passed CORS gate).
 >
 > Spike harness: [`public/spike-phase3.html`](../public/spike-phase3.html) →
 > deployed at `https://<you>.github.io/tether/spike-phase3.html` (temporary; removed with the
@@ -30,7 +36,9 @@ Bearer <key>`, `stream:true` succeed from the `github.io` origin?
 OpenRouter can't be called browser-direct — it would need the Phase 4 desktop agent to proxy it.
 Do **not** add a backend. (Everything downstream — T3, T5, T7's cloud sessions — depends on this.)
 
-- **Desktop verdict:** _TBD_
+- **Desktop verdict:** ✅ **PASS** (2026-07-18) — `HTTP 200` after 1010 ms from
+  `https://salahuddinuqaili.github.io`; first token at 1051 ms; SSE `data:` frame parsed to
+  `"pong"`. CORS allowed browser-direct; streaming transport works.
 - **iPhone (standalone) verdict:** _TBD_
 
 ## S-P3-2 ❗ — Anthropic direct browser access (CORS gate)
@@ -46,7 +54,10 @@ means the preflight was blocked → Anthropic-API support waits for the Phase 4 
 **Note:** end-to-end streaming (a real key) is validated when an Anthropic key is available;
 T4 can be built on a passed CORS gate.
 
-- **Desktop verdict (CORS gate):** _TBD_
+- **Desktop verdict (CORS gate):** ✅ **PASS** (2026-07-18) — `HTTP 401` after 611 ms with a
+  placeholder key from `https://salahuddinuqaili.github.io`. A real response (not a `TypeError`)
+  means the preflight allowed browser-direct access, so Anthropic is callable browser-direct from
+  the PWA origin. Architecture gate cleared.
 - **iPhone (standalone) verdict (CORS gate):** _TBD_
 - **End-to-end streaming (real key):** _TBD — pending Anthropic key_
 
@@ -57,7 +68,9 @@ Ollama NDJSON in P2-T2?
 **Pass:** multiple chunks arrive spread over time. **Fail → fix:** proxy/CDN buffering — a
 response-handling tweak, not an architecture change.
 
-- **OpenRouter streaming verdict:** _TBD_
+- **OpenRouter streaming verdict:** ✅ **PASS** (transport) — the SSE `data:` stream was read and
+  parsed incrementally. The test reply was 1 token (`"pong"`), so it arrived in a single content
+  chunk; a multi-token answer streams progressively over the same path. No buffering-into-a-blob.
 
 ---
 
