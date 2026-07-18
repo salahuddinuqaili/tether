@@ -1,9 +1,9 @@
-import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react'
-import { createOllamaProvider, isAbort, type ChatMessage as WireMessage } from '../llm/providers'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { createProvider, isAbort, type ChatMessage as WireMessage } from '../llm/providers'
 import { buildSystemPrompt, runAgentTurn, type AgentContext } from '../llm/agent'
 import { GitHubError } from '../github/client'
 import { decodeBase64ToText } from '../lib/base64'
-import { getModel, getOllamaUrl } from '../storage/llm'
+import { getActiveBinding, migrateLegacyOllama } from '../storage/providers'
 import { useStore } from '../state/store'
 import { appendStreaming, getStreamingText, resetStreaming } from './streaming'
 import type { AgentStatus, UiMessage } from './types'
@@ -51,6 +51,12 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [messages, setMessages] = useState<UiMessage[]>([])
   const [status, setStatus] = useState<AgentStatus>('idle')
   const [attachments, setAttachments] = useState<Attachment[]>([])
+
+  // Migrate a Phase 2 install's ollama_url/ollama_model into an endpoint once, so
+  // the chat works immediately after upgrade even if Settings is never opened (P3-T2).
+  useEffect(() => {
+    void migrateLegacyOllama()
+  }, [])
 
   // Latest repo context + messages, read at send time without re-creating `send`.
   const { client, repo, branch, openFile, buffer } = useStore()
@@ -115,19 +121,20 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         const controller = new AbortController()
         abortRef.current = controller
         try {
-          const [url, model] = await Promise.all([getOllamaUrl(), getModel()])
-          if (!url || !model) {
+          // Resolve the active endpoint + model (Settings, P3-T2) and build its
+          // adapter for this turn. The chat runs against whichever endpoint is active.
+          const binding = await getActiveBinding()
+          if (!binding || !binding.model) {
             finalize(
               assistantId,
-              'No model is configured yet. Open Settings, enter your Ollama URL, test the connection, and pick a model.',
+              'No model endpoint is configured yet. Open Settings, add an endpoint, and pick a model.',
               true,
             )
             setStatus('error')
             return
           }
-          // Build the endpoint adapter for this turn. Ollama-only today; T2 swaps
-          // this for the active EndpointConfig → createProvider(config).
-          const provider = createOllamaProvider({ baseUrl: url })
+          const model = binding.model
+          const provider = createProvider(binding.endpoint)
 
           const { repo: r, branch: b, openFile: f, buffer: buf } = ctxRef.current
           const agentCtx: AgentContext | null =

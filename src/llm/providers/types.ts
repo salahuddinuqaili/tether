@@ -7,6 +7,27 @@
 
 export type ChatRole = 'system' | 'user' | 'assistant' | 'tool'
 
+// The families of endpoint tether can talk to. 'openai' covers any
+// OpenAI-compatible endpoint (OpenRouter first). Kept in sync with EndpointConfig.
+export type ProviderKind = 'ollama' | 'openai' | 'anthropic'
+
+// A configured endpoint: what the user sets up in Settings, persisted on-device
+// (src/storage/providers.ts) and turned into a live Provider via createProvider().
+// The provider layer owns this shape; storage only persists it.
+export interface EndpointConfig {
+  id: string
+  kind: ProviderKind
+  // Human label shown in pickers, e.g. "Desktop (Ollama)", "OpenRouter", "Claude".
+  label: string
+  // Ollama URL / https://openrouter.ai/api/v1 / https://api.anthropic.com.
+  baseUrl: string
+  // Cloud credential (OpenRouter / Anthropic). A SPENDABLE secret: on-device only,
+  // stored like the PAT (D8/D13), never logged, committed, or displayed. Unset for Ollama.
+  apiKey?: string
+  // Last-selected model for this endpoint, restored when it becomes active again.
+  model?: string
+}
+
 // A normalized tool call: a name plus already-parsed argument object. Adapters
 // that carry arguments as a JSON string on the wire (OpenAI) parse them here, so
 // the agent loop never sees a provider's raw shape. There is deliberately NO call
@@ -64,7 +85,7 @@ export interface ChatResponse {
 // wire format for its family. `kind` lets the UI or agent branch on provider
 // family in the rare places that must (e.g. same-box GPU serialization).
 export interface Provider {
-  readonly kind: 'ollama' | 'openai' | 'anthropic'
+  readonly kind: ProviderKind
   chat(params: ProviderChatParams): Promise<ChatResponse>
   // Discover selectable models (Ollama /api/tags, OpenAI /v1/models, a curated
   // list for Anthropic). Returns [] when the endpoint is not enumerable.
