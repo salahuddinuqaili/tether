@@ -37,6 +37,10 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        // The standalone Phase 3 cloud spike page must be served as itself, never
+        // swapped for the SPA shell by the navigation fallback (temporary; removed
+        // with the spike page when the gate is recorded).
+        navigateFallbackDenylist: [/spike-phase3\.html$/],
       },
       devOptions: { enabled: false },
     }),
