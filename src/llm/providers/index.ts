@@ -3,11 +3,13 @@
 
 import { createOllamaProvider } from './ollama'
 import { createOpenAIProvider } from './openai'
+import { createAnthropicProvider } from './anthropic'
 import { ProviderError, type EndpointConfig, type Provider } from './types'
 
 export * from './types'
 export { createOllamaProvider, listOllamaModels, type OllamaConfig } from './ollama'
 export { createOpenAIProvider, listOpenAIModels, type OpenAIConfig } from './openai'
+export { createAnthropicProvider, listAnthropicModels, type AnthropicConfig } from './anthropic'
 
 // Turn a persisted EndpointConfig into a live Provider (P3-T2). The single seam
 // where kind → adapter; every consumer (agent loop, chat picker, sessions) goes
@@ -19,7 +21,7 @@ export function createProvider(config: EndpointConfig): Provider {
     case 'openai':
       return createOpenAIProvider({ baseUrl: config.baseUrl, apiKey: config.apiKey })
     case 'anthropic':
-      throw new ProviderError(`The "${config.label}" provider isn't wired yet (arrives in P3-T4).`)
+      return createAnthropicProvider({ baseUrl: config.baseUrl, apiKey: config.apiKey })
     default: {
       // Exhaustiveness guard: a new ProviderKind must add a case above.
       const _never: never = config.kind
