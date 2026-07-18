@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react'
-import { isAbort, type ChatMessage as WireMessage } from '../llm/client'
+import { createOllamaProvider, isAbort, type ChatMessage as WireMessage } from '../llm/providers'
 import { buildSystemPrompt, runAgentTurn, type AgentContext } from '../llm/agent'
 import { GitHubError } from '../github/client'
 import { decodeBase64ToText } from '../lib/base64'
@@ -125,6 +125,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
             setStatus('error')
             return
           }
+          // Build the endpoint adapter for this turn. Ollama-only today; T2 swaps
+          // this for the active EndpointConfig → createProvider(config).
+          const provider = createOllamaProvider({ baseUrl: url })
 
           const { repo: r, branch: b, openFile: f, buffer: buf } = ctxRef.current
           const agentCtx: AgentContext | null =
@@ -162,7 +165,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           ]
 
           const res = await runAgentTurn({
-            url,
+            provider,
             model,
             messages: apiMessages,
             readFile,

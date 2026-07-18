@@ -141,6 +141,17 @@ so nothing is wasted or prematurely deleted:**
 > Note: the Claude *subscription* is reachable only via Claude Code / Agent SDK as a desktop endpoint
 > (Phase 4), never by scraping claude.ai; that is distinct from `fam`'s Anthropic **API-key** routing.
 
+### ✅ D12 (Phase 3, P3-T1) — Provider abstraction behind the Ollama client
+*Confirmed during P3-T1.* Generalized the Ollama-only `src/llm/client.ts` into a `Provider`
+interface (`src/llm/providers/`): each endpoint is an adapter owning its wire format, stream
+framing, and tool-call shape; the agent loop calls `provider.chat()` and stays format-blind.
+Normalized `ChatMessage`/`ToolCall` carry parsed-object args and **no call id** — the loop pairs a
+tool call with its result positionally, and adapters reconstruct wire ids (OpenAI `tool_call_id`,
+Anthropic `tool_use_id`) from that ordering. Verified byte-for-byte vs Phase 2 against live Ollama
+(native + leaked-JSON tool paths).
+> Rejected: per-provider branches in the agent loop (leaks wire format upward); a normalized
+> tool-call `id` field (unused by Ollama — deferred to the adapter that needs it, T3/T4).
+
 ---
 
 ## 3. Decisions still genuinely open (flag before the phase that needs them)

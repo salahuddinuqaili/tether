@@ -7,7 +7,7 @@ import {
   setModel as setStoredModel,
   setOllamaUrl,
 } from '../storage/llm'
-import { listModels } from '../llm/tags'
+import { listOllamaModels as listModels } from '../llm/providers'
 
 // Desktop-model settings (P2-T1). Two jobs in one block: (1) the Phase 2 transport
 // spike (S3/S4) — a real cross-origin fetch from the installed PWA to the desktop
