@@ -16,11 +16,12 @@ import {
   migrateLegacyOllama,
   newEndpointId,
   setActiveEndpointId,
+  setActiveModelForEndpoint,
   upsertEndpoint,
 } from '../src/storage/providers'
 import { setOllamaUrl, setModel } from '../src/storage/llm'
 import { idbGet } from '../src/lib/idb'
-import type { EndpointConfig } from '../src/llm/providers'
+import { createProvider, type EndpointConfig } from '../src/llm/providers'
 
 let failures = 0
 const ok = (m: string) => console.log('  \x1b[32m✓\x1b[0m ' + m)
@@ -86,6 +87,24 @@ async function main() {
   // 7. Legacy keys remain readable (migration is non-destructive). setOllamaUrl
   // already normalized the trailing slash on save, so that's what's stored.
   eq(await idbGet('ollama_url'), 'https://your-machine.example.ts.net', 'legacy ollama_url still readable')
+
+  // 8. (P3-T5 contract) The chat picker writes the active {endpoint, model}; what it
+  // writes is exactly what getActiveBinding + createProvider return — i.e. what
+  // ChatProvider reads at send, so the NEXT message uses the newly-picked provider.
+  const ollamaId = (await getEndpoints())[0].id
+  const cloud: EndpointConfig = { id: newEndpointId(), ...defaultEndpoint('openai'), apiKey: 'sk-or-2', model: 'openai/gpt-4o-mini' }
+  await upsertEndpoint(cloud)
+  await setActiveEndpointId(cloud.id)
+  await setActiveModelForEndpoint(cloud.id, 'openai/gpt-4o-mini')
+  let b = await getActiveBinding()
+  eq([b?.endpoint.kind, b?.model], ['openai', 'openai/gpt-4o-mini'], 'switch to cloud → binding is the cloud endpoint + model')
+  eq(createProvider(b!.endpoint).kind, 'openai', 'createProvider(binding) yields the OpenAI provider')
+  // Switch back to local with a different model → binding follows (local↔cloud).
+  await setActiveEndpointId(ollamaId)
+  await setActiveModelForEndpoint(ollamaId, 'qwen2.5:7b-instruct')
+  b = await getActiveBinding()
+  eq([b?.endpoint.kind, b?.model], ['ollama', 'qwen2.5:7b-instruct'], 'switch back to local → binding is the ollama endpoint + new model')
+  eq(createProvider(b!.endpoint).kind, 'ollama', 'createProvider(binding) yields the Ollama provider')
 
   console.log('')
   if (failures === 0) console.log('\x1b[32mP3-T2 PASS\x1b[0m — endpoints migrate, persist across reload, and never strand the chat.\n')
