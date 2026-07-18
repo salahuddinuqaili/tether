@@ -40,8 +40,9 @@ export function Composer() {
 
   return (
     <div
-      className="border-t border-white/10 bg-bg px-2 pt-2"
-      style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0.5rem)' }}
+      className="border-t border-white/10 bg-bg px-2 pt-2 pb-2"
+      // The bottom TabBar owns the safe-area inset; when the keyboard is open the
+      // tab bar hides and the composer sits directly above the keyboard.
     >
       {status === 'error' && (
         <div className="mb-2 flex items-center gap-2 rounded-md border border-red-500/25 bg-red-500/5 px-2.5 py-1.5 text-xs text-red-300">

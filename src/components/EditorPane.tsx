@@ -81,11 +81,8 @@ export function EditorPane() {
         />
       </div>
 
-      {/* Commit bar (P1-T7). */}
-      <div
-        className="border-t border-white/10 bg-surface px-3 pt-2"
-        style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0.5rem)' }}
-      >
+      {/* Commit bar (P1-T7). The bottom TabBar owns the safe-area inset. */}
+      <div className="border-t border-white/10 bg-surface px-3 pt-2 pb-2">
         {conflict ? (
           <div className="flex flex-col gap-2">
             <p className="text-xs text-amber-400">

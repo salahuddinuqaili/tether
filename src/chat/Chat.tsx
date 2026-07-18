@@ -5,13 +5,14 @@ import { useVisualViewport } from './useVisualViewport'
 import { MessageList } from './MessageList'
 import { Composer } from './Composer'
 import { ChatModelPicker } from './ChatModelPicker'
+import { TabBar } from '../components/TabBar'
 
 // The chat-first home (D5). A viewport-tracking, full-screen surface: header +
 // transcript + keyboard-pinned composer. Rendered instead of the normal app shell
 // so the composer can stay glued above the iOS keyboard (see useVisualViewport).
 export function Chat() {
   const { messages, status } = useChat()
-  const { repo, branch, setView } = useStore()
+  const { repo, setView } = useStore()
   const rootRef = useRef<HTMLDivElement>(null)
   useVisualViewport(rootRef)
 
@@ -27,29 +28,9 @@ export function Chat() {
         <div className="flex items-center gap-2">
           <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-accent" aria-hidden />
           <h1 className="text-sm font-semibold tracking-wide">tether</h1>
-          {repo && (
-            <button
-              type="button"
-              onClick={() => setView('browse')}
-              className="min-w-0 truncate rounded px-1.5 py-0.5 text-xs text-white/60 hover:bg-white/10"
-              title="Change repo / branch"
-            >
-              {repo.owner}/{repo.name}
-              {branch ? `@${branch}` : ''}
-            </button>
-          )}
           <span className="ml-auto flex shrink-0 items-center gap-2 text-xs text-white/40">
             {status === 'streaming' && <span className="text-accent/80">thinking…</span>}
             {status === 'reading' && <span className="text-accent/80">reading files…</span>}
-            <button
-              type="button"
-              onClick={() => setView('settings')}
-              className="rounded px-1.5 py-0.5 text-white/60 hover:bg-white/10 hover:text-white"
-              aria-label="Settings"
-              title="Settings"
-            >
-              ⚙
-            </button>
           </span>
         </div>
         {/* Chat-page model/endpoint picker (P3-T5) — binds the active chat. */}
@@ -65,6 +46,7 @@ export function Chat() {
       )}
 
       <Composer />
+      <TabBar />
     </div>
   )
 }

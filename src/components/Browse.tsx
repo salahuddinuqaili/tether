@@ -7,8 +7,11 @@ import { FileTree } from './FileTree'
 // the list the token can see; the default branch is preselected. The tree
 // (P1-T4) renders below once a repo + branch are chosen.
 export function Browse() {
-  const { client, repo, branch, openFile, dirty, selectRepo, setBranch, clearRepo, openFileFromGitHub } =
-    useStore()
+  const { client, repo, branch, openFile, dirty, selectRepo, setBranch, openFileFromGitHub } = useStore()
+  // "Change repo" enters picking mode WITHOUT destroying the current selection
+  // (the old bug: clearRepo() nulled + wiped it, stranding you if you backed out).
+  // The selection is only replaced when a new repo is actually chosen.
+  const [changing, setChanging] = useState(false)
 
   // Opening a different file replaces the buffer, so confirm before discarding
   // unsaved edits (P1-T6). Re-tapping the already-open file is a no-op prompt.
@@ -21,11 +24,15 @@ export function Browse() {
 
   return (
     <div className="mx-auto flex h-full w-full max-w-md flex-col gap-4 overflow-y-auto p-5">
-      {!repo ? (
+      {!repo || changing ? (
         <RepoPicker
-          onPick={selectRepo}
+          onPick={async (owner, name) => {
+            await selectRepo(owner, name) // throws on error → picker shows it, stays open
+            setChanging(false) // success only: reveal the newly-chosen repo
+          }}
           list={() => client!.listRepos()}
           disabled={!client}
+          onCancel={repo ? () => setChanging(false) : undefined}
         />
       ) : (
         <div className="flex flex-col gap-4">
@@ -38,7 +45,7 @@ export function Browse() {
             </div>
             <button
               type="button"
-              onClick={clearRepo}
+              onClick={() => setChanging(true)}
               className="ml-auto rounded-md border border-white/10 px-2.5 py-1 text-xs text-muted hover:text-white"
             >
               Change repo
@@ -70,10 +77,14 @@ function RepoPicker({
   onPick,
   list,
   disabled,
+  onCancel,
 }: {
   onPick: (owner: string, name: string) => Promise<void>
   list: () => Promise<GitHubRepo[]>
   disabled: boolean
+  // Present only when changing an existing repo — lets you back out with the
+  // current selection intact (part of the change-repo bug fix).
+  onCancel?: () => void
 }) {
   const [typed, setTyped] = useState('')
   const [repos, setRepos] = useState<GitHubRepo[] | null>(null)
@@ -115,9 +126,20 @@ function RepoPicker({
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h2 className="text-base font-semibold">Open a repo</h2>
-        <p className="mt-1 text-sm text-muted">Type owner/repo, or pick one below.</p>
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-base font-semibold">{onCancel ? 'Change repo' : 'Open a repo'}</h2>
+          <p className="mt-1 text-sm text-muted">Type owner/repo, or pick one below.</p>
+        </div>
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="shrink-0 rounded-md border border-white/10 px-2.5 py-1 text-xs text-muted hover:text-white"
+          >
+            Cancel
+          </button>
+        )}
       </div>
 
       <form onSubmit={onSubmit} className="flex gap-2">

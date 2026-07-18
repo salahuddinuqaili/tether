@@ -6,9 +6,10 @@ import { Chat } from './chat/Chat'
 import { Settings } from './components/Settings'
 import { Browse } from './components/Browse'
 import { EditorPane } from './components/EditorPane'
+import { TabBar } from './components/TabBar'
 
 function Shell() {
-  const { view, setView, repo, branch, token, tokenLoaded, dirty } = useStore()
+  const { view, repo, token, tokenLoaded, dirty } = useStore()
 
   // Warn on reload/close/tab-away while there are unsaved edits (P1-T6). OPFS
   // (P1-T8) makes this recoverable, but the prompt still prevents surprise loss.
@@ -26,46 +27,19 @@ function Shell() {
   // composer can pin above the iOS keyboard — it replaces the normal shell chrome.
   if (view === 'chat') return <Chat />
 
+  // Nav now lives in the bottom TabBar, so the shell header is just a labeled
+  // context strip (and the safe-area-top spacer).
+  const title = view === 'settings' ? 'Settings' : view === 'browse' ? 'Browse' : repo ? repo.name : 'Editor'
+
   return (
     <div className="flex h-full flex-col">
       <header
-        className="flex items-center gap-2 border-b border-white/10 px-4 pb-3"
+        className="flex items-center gap-2 border-b border-white/10 px-4 pb-2"
         style={{ paddingTop: 'max(env(safe-area-inset-top), 0.75rem)' }}
       >
-        <button
-          type="button"
-          onClick={() => setView('chat')}
-          className="flex items-center gap-2"
-          title="Chat (home)"
-        >
-          <span className="h-2.5 w-2.5 rounded-full bg-accent" aria-hidden />
-          <h1 className="text-sm font-semibold tracking-wide">tether</h1>
-        </button>
-
-        {repo && (
-          <button
-            type="button"
-            onClick={() => setView('browse')}
-            className="min-w-0 truncate rounded px-1.5 py-0.5 text-xs text-white/60 hover:bg-white/10"
-            title="Browse repo"
-          >
-            {repo.owner}/{repo.name}
-            {branch ? `@${branch}` : ''}
-          </button>
-        )}
-
-        <span className="ml-auto flex items-center gap-3 text-xs text-white/40">
-          {tokenLoaded && !token && <span>no token</span>}
-          <button
-            type="button"
-            onClick={() => setView(view === 'settings' ? 'chat' : 'settings')}
-            className="rounded px-1.5 py-0.5 text-white/60 hover:bg-white/10 hover:text-white"
-            aria-label="Settings"
-            title="Settings"
-          >
-            ⚙
-          </button>
-        </span>
+        <span className="h-2 w-2 shrink-0 rounded-full bg-accent" aria-hidden />
+        <h1 className="min-w-0 truncate text-sm font-semibold tracking-wide">{title}</h1>
+        {tokenLoaded && !token && <span className="ml-auto text-xs text-white/40">no token</span>}
       </header>
 
       <main className="min-h-0 flex-1">
@@ -73,6 +47,8 @@ function Shell() {
         {view === 'browse' && <Browse />}
         {view === 'editor' && <EditorPane />}
       </main>
+
+      <TabBar />
     </div>
   )
 }
