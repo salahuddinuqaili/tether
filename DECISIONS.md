@@ -129,7 +129,7 @@ leaked JSON `read_file` call from `content`, and always request `think:false` so
 > protocol (native works for 2/3 and is the more standard path). `@`-attach remains the manual fallback.
 
 ### ✅ D11 (post-Phase-2 direction) — Pivot: tether becomes a thin client for agent *endpoints*
-*Confirmed 2026-07-17* after the product review (`docs/feedback-2026-07-17-desktop-agent-direction.md`).
+*Confirmed 2026-07-17* after the product review (the desktop-agent direction call).
 The north star shifts from "smart GitHub editor" to "thin mobile client for capable agent
 endpoints" — local (Ollama) and cloud (OpenRouter, Anthropic API) now, and a **desktop agent**
 (Claude Code / the Agent SDK, or your own runtime — real shell/fs/web tools) later. **Sequenced
