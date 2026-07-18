@@ -11,7 +11,7 @@ over Tailscale — is the brain.
 No backend. No App Store. No Mac in the build loop.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-00FF66.svg)](LICENSE)
-![Status](https://img.shields.io/badge/status-Phase%200%20·%20skeleton-f5a623.svg)
+![Status](https://img.shields.io/badge/status-Phase%203%20·%20multi--provider-00FF66.svg)
 ![PWA](https://img.shields.io/badge/PWA-installable-3b82f6.svg)
 ![Platform](https://img.shields.io/badge/platform-iOS%20Safari-lightgrey.svg)
 
@@ -58,14 +58,16 @@ tether ships in phases, each with a hard stop signal. It's early — here's exac
 
 | Phase | Delivers | State |
 |------|----------|-------|
-| **0 · Skeleton** | Installable PWA + offline shell + CodeMirror editor on a local buffer | 🟡 **In progress** — editor works; on-device install test pending |
-| **1 · GitHub** | PAT auth, browse a repo, open/edit/commit a file from the phone | ⚪ Planned |
-| **2 · Local LLM** | Tailscale Serve TLS → Ollama, streaming chat, "explain selection" | ⚪ Planned |
-| **3 · Full loop** | Apply LLM edits into the buffer, diff-before-commit, multi-file commits | ⚪ Planned |
+| **0 · Skeleton** | Installable PWA + offline shell + CodeMirror editor on a local buffer | ✅ Done |
+| **1 · GitHub** | PAT auth, browse a repo, open/edit/commit a file from the phone | ✅ Done |
+| **2 · Chat-first agent** | Streaming chat with your desktop model, `read_file` tool loop, diff-before-commit, apply → commit | ✅ Done |
+| **3 · Multi-provider thin client** | One `Provider` abstraction over local Ollama **and** cloud (OpenRouter, Anthropic API); pick provider+model on the chat page; concurrent multi-chat; labeled bottom-tab nav | 🟡 **In review** |
 
-**MVP = Phase 0 + Phase 1** (a usable mobile git editor, zero LLM required). Phase 2
-realizes the actual vision. See [`PRD.md`](PRD.md), [`DECISIONS.md`](DECISIONS.md),
-and [`docs/`](docs/) for the full plan and the architecture rationale.
+> **Direction ([D11](DECISIONS.md)):** tether is pivoting from "smart GitHub editor" to a **thin
+> client for capable agent endpoints** — local and cloud now, a desktop agent (fam-x / Claude Code)
+> next. Phase 3 lays that foundation without reversing any locked decision; GitHub browse/edit/commit
+> stays fully functional. See [`SPEC-phase3.md`](SPEC-phase3.md), [`PRD.md`](PRD.md),
+> [`DECISIONS.md`](DECISIONS.md), and [`docs/`](docs/) for the plan and rationale.
 
 ## Tech
 
