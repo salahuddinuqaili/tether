@@ -152,6 +152,17 @@ Anthropic `tool_use_id`) from that ordering. Verified byte-for-byte vs Phase 2 a
 > Rejected: per-provider branches in the agent loop (leaks wire format upward); a normalized
 > tool-call `id` field (unused by Ollama — deferred to the adapter that needs it, T3/T4).
 
+### ✅ D13 (Phase 3, P3-T2) — Endpoint config store + spendable-key posture
+*Confirmed during P3-T2.* Endpoints are `EndpointConfig` records (shape owned by the provider
+layer, persisted by `src/storage/providers.ts` in IndexedDB) with an active `{endpoint, model}`
+binding; `createProvider(config)` is the sole kind→adapter seam. Phase 2's `ollama_url`/
+`ollama_model` migrate once into an endpoint (legacy keys left readable). Cloud **API keys are
+spendable credentials** held on-device exactly like the PAT (D8): never logged, committed, or
+displayed back — money at stake, not just repo scope, so removal is one tap. Acceptable for
+single-user (§4.5).
+> Rejected: EndpointConfig owned by the storage layer (the provider layer defines its own config
+> shape; storage only persists it); any backend key vault (🔒4, single-user).
+
 ---
 
 ## 3. Decisions still genuinely open (flag before the phase that needs them)
