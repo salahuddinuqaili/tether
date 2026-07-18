@@ -6,7 +6,7 @@ import { Endpoints } from './Endpoints'
 // IndexedDB via the store; this component never logs it and never renders it
 // back — once saved we show only a masked "connected" state.
 export function Settings() {
-  const { token, auth, user, authError, saveToken, removeToken, setView } = useStore()
+  const { token, auth, user, authError, saveToken, removeToken } = useStore()
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -112,14 +112,6 @@ export function Settings() {
       )}
 
       <Endpoints />
-
-      <button
-        type="button"
-        onClick={() => setView('editor')}
-        className="mt-auto self-start text-sm text-muted hover:text-white"
-      >
-        ← Back to editor
-      </button>
     </div>
   )
 }
