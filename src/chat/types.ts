@@ -16,5 +16,28 @@ export interface UiMessage {
 }
 
 // The agent's high-level status, surfaced in the header / typing indicator.
-// 'reading' is used by the P2-T4 tool loop (agent pulling repo files for context).
-export type AgentStatus = 'idle' | 'streaming' | 'reading' | 'error'
+// 'reading' is the P2-T4 tool loop (agent pulling repo files); 'queued' (P3-T7) means
+// a same-Ollama-box session is ahead of this one on the GPU — waiting, not stuck.
+export type AgentStatus = 'idle' | 'queued' | 'streaming' | 'reading' | 'error'
+
+// A file the user manually attached for context (the @-attach fallback, SPEC §5.2):
+// its content is injected into the next turn so the model sees it without read_file.
+export interface Attachment {
+  path: string
+  content: string
+}
+
+// One chat conversation (P3-T7). Multiple sessions run concurrently, each bound to
+// its own {endpoint, model} and owning its own messages, status, AbortController, and
+// streaming channel — no global singleton (SPEC §4.6).
+export interface Session {
+  id: string
+  title: string
+  // The endpoint (by id) + model this session talks to. Unset falls back to the
+  // global default binding (Settings) when a turn runs.
+  endpointId?: string
+  model?: string
+  messages: UiMessage[]
+  status: AgentStatus
+  attachments: Attachment[]
+}

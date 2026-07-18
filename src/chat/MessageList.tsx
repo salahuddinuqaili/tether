@@ -6,7 +6,7 @@ import type { UiMessage } from './types'
 // while streaming, but stops the moment the user scrolls up (scroll anchoring), and
 // offers a "jump to latest" affordance (SPEC §3). Streaming growth is tracked with a
 // ResizeObserver so the list pins to the bottom without re-rendering per token.
-export function MessageList({ messages }: { messages: UiMessage[] }) {
+export function MessageList({ messages, sessionId }: { messages: UiMessage[]; sessionId: string }) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const stickRef = useRef(true)
@@ -62,7 +62,7 @@ export function MessageList({ messages }: { messages: UiMessage[] }) {
       >
         <div ref={contentRef} className="flex flex-col gap-2">
           {messages.map((m) => (
-            <MessageBubble key={m.id} message={m} />
+            <MessageBubble key={m.id} message={m} sessionId={sessionId} />
           ))}
         </div>
       </div>

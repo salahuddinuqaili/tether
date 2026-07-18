@@ -163,6 +163,19 @@ single-user (§4.5).
 > Rejected: EndpointConfig owned by the storage layer (the provider layer defines its own config
 > shape; storage only persists it); any backend key vault (🔒4, single-user).
 
+### ✅ D14 (Phase 3, P3-T7) — Sessions layer: concurrent chats on the Provider abstraction
+*Confirmed during P3-T7.* Generalized the single-conversation `ChatProvider` into a `Session[]`
+model: each session owns its messages, status, AbortController, `{endpoint, model}` binding, and
+its OWN streaming channel (`streaming.ts` keyed by session id, not the D9 global singleton) — so
+sessions on different endpoints stream concurrently while a per-token delta re-renders ONLY the
+active bubble (§3 preserved). Sessions persist reload-safely in IndexedDB (in-flight placeholders
+dropped, status reset). Same-Ollama-box concurrency is surfaced honestly with a **synchronous**
+`queued` indicator; tether does not fight the GPU serialization (that's the user's
+`OLLAMA_NUM_PARALLEL`).
+> Rejected: one global streaming buffer (janks concurrent streams, breaks §3); OPFS for session
+> data (IndexedDB is simpler for small structured JSON); client-side request serialization for the
+> same box (Ollama's job, not the thin client's).
+
 ---
 
 ## 3. Decisions still genuinely open (flag before the phase that needs them)

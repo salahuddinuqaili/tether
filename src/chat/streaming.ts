@@ -1,37 +1,54 @@
-// External store for the in-flight assistant text. Token deltas land here and
-// notify ONLY the active streaming bubble (via useSyncExternalStore) — the message
-// list and every finalized bubble stay put. This is what lets streaming append
-// "only the last bubble" and never re-render or re-diff the whole list per token
-// (SPEC §3). Exactly one assistant message streams at a time, so a single global
-// buffer is enough.
+// Per-session external store for in-flight assistant text (P3-T7, generalizing D9).
+// Each session owns its own channel, so multiple sessions can stream at once and a
+// token landing in one session notifies ONLY that session's active bubble (via
+// useSyncExternalStore) — the message list and every finalized/other-session bubble
+// stay put. This preserves the SPEC §3 "only the streaming bubble re-renders"
+// guarantee across concurrent sessions, and is why we do NOT use one global buffer.
 
 type Listener = () => void
 
-let text = ''
-const listeners = new Set<Listener>()
-
-function emit(): void {
-  for (const l of listeners) l()
+interface Channel {
+  text: string
+  listeners: Set<Listener>
 }
 
-export function getStreamingText(): string {
-  return text
-}
+const channels = new Map<string, Channel>()
 
-export function appendStreaming(delta: string): void {
-  text += delta
-  emit()
-}
-
-// Reset the buffer for the next turn. No emit: the finalized bubble has already
-// re-rendered from its committed `content` and no longer subscribes.
-export function resetStreaming(): void {
-  text = ''
-}
-
-export function subscribeStreaming(listener: Listener): () => void {
-  listeners.add(listener)
-  return () => {
-    listeners.delete(listener)
+function channel(id: string): Channel {
+  let c = channels.get(id)
+  if (!c) {
+    c = { text: '', listeners: new Set() }
+    channels.set(id, c)
   }
+  return c
+}
+
+export function getStreamingText(id: string): string {
+  return channels.get(id)?.text ?? ''
+}
+
+export function appendStreaming(id: string, delta: string): void {
+  const c = channel(id)
+  c.text += delta
+  for (const l of c.listeners) l()
+}
+
+// Reset the buffer for the next round/turn. No emit: the bubble re-renders from its
+// committed content once the turn finalizes and no longer subscribes.
+export function resetStreaming(id: string): void {
+  const c = channels.get(id)
+  if (c) c.text = ''
+}
+
+export function subscribeStreaming(id: string, listener: Listener): () => void {
+  const c = channel(id)
+  c.listeners.add(listener)
+  return () => {
+    c.listeners.delete(listener)
+  }
+}
+
+// Drop a closed session's channel so it can't leak memory across a long-lived app.
+export function disposeStreaming(id: string): void {
+  channels.delete(id)
 }
