@@ -176,6 +176,22 @@ dropped, status reset). Same-Ollama-box concurrency is surfaced honestly with a 
 > data (IndexedDB is simpler for small structured JSON); client-side request serialization for the
 > same box (Ollama's job, not the thin client's).
 
+### ✅ D15 (Phase 4 direction) — Desktop agent: thin client for any agent endpoint
+*Confirmed 2026-07-18 (direction interview; SPEC-phase4.md).* Phase 4 makes tether a thin client
+for a **desktop agent** — an endpoint that runs its own tools (shell/fs/web) server-side. tether
+speaks **one generic HTTP/SSE agent-endpoint protocol** (OpenAI-compat, reusing the D12 `Provider`
+abstraction) and never knows *which* agent it talks to; that (fam-x, hermes, Claude Code) is
+**desktop-side config, never tether code** — the "any agent" requirement. **Reversals ratified:**
+🔒4 (no backend) → a **desktop daemon** (the agent, or a Telegram↔HTTP bridge) runs on the *user's*
+desktop over Tailscale (still **no hosted** backend, single-user holds); the "no code execution" and
+"thin-client-is-editor" non-goals → the desktop agent executes code by design, the phone stays thin;
+🔒7 already generalized (Phase 3). **🔒3 is *softened*, not dropped:** GitHub is one capability but
+**editing stays** (demoted, not retired). Reference/test agent = **hermes** via a desktop Telegram
+bridge (a separate, private artifact); fam-x's own server is the same shape, later.
+> Rejected: fam/hermes/Telegram code in the public PWA (stay generic); a hosted multi-tenant backend
+> (🔒4 single-user holds); a Telegram client inside the PWA (single-poller conflict, not
+> browser-clean); retiring the GitHub editor (kept per the interview).
+
 ---
 
 ## 3. Decisions still genuinely open (flag before the phase that needs them)
