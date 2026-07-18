@@ -15,6 +15,7 @@ export function SessionSwitcher() {
         return (
           <div
             key={s.id}
+            data-testid="session-tab"
             className={`flex shrink-0 items-center gap-1 rounded-md border px-2 py-1 text-xs ${
               active ? 'border-accent/40 bg-accent/10 text-white' : 'border-white/10 text-white/60'
             }`}
