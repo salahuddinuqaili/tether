@@ -53,10 +53,10 @@ tether stays **generic**: it speaks one HTTP/SSE agent-endpoint protocol and nev
 your own daemon over Tailscale, like Ollama:
 
 - **Any HTTP/SSE agent** (OpenAI-compatible) drops in as one more endpoint.
-- Agents that live on other transports (e.g. a Telegram bot) get exposed by a **small
-  desktop bridge** — kept out of the public app, so tether's code stays agent-agnostic.
+- Agents that live on another transport (a chat protocol, a CLI, an RPC) get exposed by a
+  **small desktop bridge** — kept out of the public app, so tether's code stays agent-agnostic.
 
-No fam-specific, no vendor-specific code in the public repo — bring your own agent.
+No agent-specific, no vendor-specific code in the public repo — bring your own agent.
 
 ---
 

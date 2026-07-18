@@ -132,20 +132,20 @@ leaked JSON `read_file` call from `content`, and always request `think:false` so
 *Confirmed 2026-07-17* after the product review (`docs/feedback-2026-07-17-desktop-agent-direction.md`).
 The north star shifts from "smart GitHub editor" to "thin mobile client for capable agent
 endpoints" — local (Ollama) and cloud (OpenRouter, Anthropic API) now, and a **desktop agent**
-(`fam-x` / Claude Code, with real shell/fs/web tools + the Claude subscription) later. **Sequenced
+(Claude Code / the Agent SDK, or your own runtime — real shell/fs/web tools) later. **Sequenced
 so nothing is wasted or prematurely deleted:**
 > - **Phase 3 (`SPEC-phase3.md`) — foundation, reverses NO locked decision:** a `Provider`
 >   abstraction behind the Ollama-only client, OpenRouter + Anthropic-API adapters, chat-page
 >   model/endpoint selection, nav clarity. GitHub browse/edit/commit **stays functional.**
-> - **Phase 4 — the desktop agent, gated on `fam-x` exposing a servable API** (today `fam` is a
->   terminal binary, not a server): this is where 🔒4 (no backend), 🔒7 (Ollama-only transport), and
+> - **Phase 4 — the desktop agent, gated on it exposing a servable API** (a CLI-only agent must
+>   grow an HTTP/SSE server first): this is where 🔒4 (no backend), 🔒7 (Ollama-only transport), and
 >   the "no code execution / thin-client" non-goals get **reversed**, and GitHub is demoted to one
 >   capability. **Those reversals are ratified when Phase 4 is designed — and they are, in D15,
 >   which softened 🔒3: GitHub editing is *kept* (demoted), not retired.**
 > - **Multi-chat** (the sessions layer on the Provider abstraction) landed *inside* Phase 3 (D14 /
 >   P3-T7), not as a separate step.
 > Note: the Claude *subscription* is reachable only via Claude Code / Agent SDK as a desktop endpoint
-> (Phase 4), never by scraping claude.ai; that is distinct from `fam`'s Anthropic **API-key** routing.
+> (Phase 4), never by scraping claude.ai; that is distinct from an agent's own Anthropic **API-key** routing.
 
 ### ✅ D12 (Phase 3, P3-T1) — Provider abstraction behind the Ollama client
 *Confirmed during P3-T1.* Generalized the Ollama-only `src/llm/client.ts` into a `Provider`
@@ -186,17 +186,17 @@ dropped, status reset). Same-Ollama-box concurrency is surfaced honestly with a 
 *Confirmed 2026-07-18 (direction interview; SPEC-phase4.md).* Phase 4 makes tether a thin client
 for a **desktop agent** — an endpoint that runs its own tools (shell/fs/web) server-side. tether
 speaks **one generic HTTP/SSE agent-endpoint protocol** (OpenAI-compat, reusing the D12 `Provider`
-abstraction) and never knows *which* agent it talks to; that (fam-x, hermes, Claude Code) is
-**desktop-side config, never tether code** — the "any agent" requirement. **Reversals ratified:**
-🔒4 (no backend) → a **desktop daemon** (the agent, or a Telegram↔HTTP bridge) runs on the *user's*
-desktop over Tailscale (still **no hosted** backend, single-user holds); the "no code execution" and
-"thin-client-is-editor" non-goals → the desktop agent executes code by design, the phone stays thin;
-🔒7 already generalized (Phase 3). **🔒3 is *softened*, not dropped:** GitHub is one capability but
-**editing stays** (demoted, not retired). Reference/test agent = **hermes** via a desktop Telegram
-bridge (a separate, private artifact); fam-x's own server is the same shape, later.
-> Rejected: fam/hermes/Telegram code in the public PWA (stay generic); a hosted multi-tenant backend
-> (🔒4 single-user holds); a Telegram client inside the PWA (single-poller conflict, not
-> browser-clean); retiring the GitHub editor (kept per the interview).
+abstraction) and never knows *which* agent it talks to; the agent — and any bridge that exposes it —
+is **desktop-side config, never tether code** (the "any agent" requirement; the self-hoster's private
+setup). **Reversals ratified:** 🔒4 (no backend) → a **desktop daemon** (the agent, or a small bridge
+in front of it) runs on the *user's* desktop over Tailscale (still **no hosted** backend, single-user
+holds); the "no code execution" and "thin-client-is-editor" non-goals → the desktop agent executes
+code by design, the phone stays thin; 🔒7 already generalized (Phase 3). **🔒3 is *softened*, not
+dropped:** GitHub is one capability but **editing stays** (demoted, not retired). The reference agent
+and any transport bridge are the self-hoster's private choice, never in the public repo.
+> Rejected: agent-specific or transport-specific code in the public PWA (stay generic); a hosted
+> multi-tenant backend (🔒4 single-user holds); a chat-transport client inside the PWA (collides with
+> the agent's own connections, not browser-clean); retiring the GitHub editor (kept per the interview).
 
 ---
 
