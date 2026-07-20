@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useStore } from '../state/store'
-import { ConnectionTest } from './ConnectionTest'
+import { Endpoints } from './Endpoints'
 
 // PAT entry + on-device storage UI (P1-T1). The token is written straight to
 // IndexedDB via the store; this component never logs it and never renders it
 // back — once saved we show only a masked "connected" state.
 export function Settings() {
-  const { token, auth, user, authError, saveToken, removeToken, setView } = useStore()
+  const { token, auth, user, authError, saveToken, removeToken } = useStore()
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -111,15 +111,7 @@ export function Settings() {
         </form>
       )}
 
-      <ConnectionTest />
-
-      <button
-        type="button"
-        onClick={() => setView('editor')}
-        className="mt-auto self-start text-sm text-muted hover:text-white"
-      >
-        ← Back to editor
-      </button>
+      <Endpoints />
     </div>
   )
 }

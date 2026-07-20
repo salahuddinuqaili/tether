@@ -4,7 +4,7 @@
 // parsed by the app, not by a tool call (P2-T5) — that is far more reliable on a
 // local model than trusting a structured "write" tool.
 
-import { chat, type ChatMessage, type Tool, type ToolCall } from './client'
+import { type ChatMessage, type Provider, type Tool, type ToolCall } from './providers'
 
 export interface AgentContext {
   owner: string
@@ -16,7 +16,9 @@ export interface AgentContext {
 }
 
 export interface AgentTurnParams {
-  url: string
+  // The endpoint to run this turn against (Ollama today; any provider after T3/T4).
+  // The agent loop is format-blind — it only calls provider.chat().
+  provider: Provider
   model: string
   // System + prior conversation + the new user message, already assembled.
   messages: ChatMessage[]
@@ -133,7 +135,7 @@ export function parseLeakedToolCall(content: string): ToolCall | null {
 // until the model answers without calling a tool (or the read cap is hit). Only the
 // final round's text is the answer; tool rounds are reset via onRoundStart.
 export async function runAgentTurn(params: AgentTurnParams): Promise<AgentTurnResult> {
-  const { url, model, signal, onToken, onRoundStart, onStatus, onRead } = params
+  const { provider, model, signal, onToken, onRoundStart, onStatus, onRead } = params
   const maxReads = params.maxReads ?? 5
   const messages: ChatMessage[] = [...params.messages]
   const reads: string[] = []
@@ -143,8 +145,7 @@ export async function runAgentTurn(params: AgentTurnParams): Promise<AgentTurnRe
   for (let round = 0; round < maxRounds; round++) {
     onStatus?.('streaming')
     onRoundStart?.()
-    const res = await chat({
-      url,
+    const res = await provider.chat({
       model,
       messages,
       tools: [READ_FILE_TOOL],
@@ -165,6 +166,12 @@ export async function runAgentTurn(params: AgentTurnParams): Promise<AgentTurnRe
     }
 
     // Tool round: record the assistant's tool request, then answer each call.
+    // INVARIANT (adapters depend on this): the single assistant message carrying
+    // all `tool_calls` is immediately followed by exactly one `role:'tool'` message
+    // per call, in the same order — so tool_calls[i] is answered by the i-th
+    // following tool message. Provider adapters reconstruct wire-specific call ids
+    // (OpenAI tool_call_id, Anthropic tool_use_id) from this positional pairing
+    // (ToolCall carries no id). Do not reorder, batch, or interleave these pushes.
     onStatus?.('reading')
     messages.push({ role: 'assistant', content: res.message.content, tool_calls: calls })
     for (const call of calls) {
@@ -196,6 +203,6 @@ export async function runAgentTurn(params: AgentTurnParams): Promise<AgentTurnRe
   // user always gets a response.
   onStatus?.('streaming')
   onRoundStart?.()
-  const final = await chat({ url, model, messages, signal, onToken, think: false })
+  const final = await provider.chat({ model, messages, signal, onToken, think: false })
   return { content: final.message.content, reads }
 }

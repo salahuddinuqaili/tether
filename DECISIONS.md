@@ -141,6 +141,41 @@ so nothing is wasted or prematurely deleted:**
 > Note: the Claude *subscription* is reachable only via Claude Code / Agent SDK as a desktop endpoint
 > (Phase 4), never by scraping claude.ai; that is distinct from `fam`'s Anthropic **API-key** routing.
 
+### ✅ D12 (Phase 3, P3-T1) — Provider abstraction behind the Ollama client
+*Confirmed during P3-T1.* Generalized the Ollama-only `src/llm/client.ts` into a `Provider`
+interface (`src/llm/providers/`): each endpoint is an adapter owning its wire format, stream
+framing, and tool-call shape; the agent loop calls `provider.chat()` and stays format-blind.
+Normalized `ChatMessage`/`ToolCall` carry parsed-object args and **no call id** — the loop pairs a
+tool call with its result positionally, and adapters reconstruct wire ids (OpenAI `tool_call_id`,
+Anthropic `tool_use_id`) from that ordering. Verified byte-for-byte vs Phase 2 against live Ollama
+(native + leaked-JSON tool paths).
+> Rejected: per-provider branches in the agent loop (leaks wire format upward); a normalized
+> tool-call `id` field (unused by Ollama — deferred to the adapter that needs it, T3/T4).
+
+### ✅ D13 (Phase 3, P3-T2) — Endpoint config store + spendable-key posture
+*Confirmed during P3-T2.* Endpoints are `EndpointConfig` records (shape owned by the provider
+layer, persisted by `src/storage/providers.ts` in IndexedDB) with an active `{endpoint, model}`
+binding; `createProvider(config)` is the sole kind→adapter seam. Phase 2's `ollama_url`/
+`ollama_model` migrate once into an endpoint (legacy keys left readable). Cloud **API keys are
+spendable credentials** held on-device exactly like the PAT (D8): never logged, committed, or
+displayed back — money at stake, not just repo scope, so removal is one tap. Acceptable for
+single-user (§4.5).
+> Rejected: EndpointConfig owned by the storage layer (the provider layer defines its own config
+> shape; storage only persists it); any backend key vault (🔒4, single-user).
+
+### ✅ D14 (Phase 3, P3-T7) — Sessions layer: concurrent chats on the Provider abstraction
+*Confirmed during P3-T7.* Generalized the single-conversation `ChatProvider` into a `Session[]`
+model: each session owns its messages, status, AbortController, `{endpoint, model}` binding, and
+its OWN streaming channel (`streaming.ts` keyed by session id, not the D9 global singleton) — so
+sessions on different endpoints stream concurrently while a per-token delta re-renders ONLY the
+active bubble (§3 preserved). Sessions persist reload-safely in IndexedDB (in-flight placeholders
+dropped, status reset). Same-Ollama-box concurrency is surfaced honestly with a **synchronous**
+`queued` indicator; tether does not fight the GPU serialization (that's the user's
+`OLLAMA_NUM_PARALLEL`).
+> Rejected: one global streaming buffer (janks concurrent streams, breaks §3); OPFS for session
+> data (IndexedDB is simpler for small structured JSON); client-side request serialization for the
+> same box (Ollama's job, not the thin client's).
+
 ---
 
 ## 3. Decisions still genuinely open (flag before the phase that needs them)
