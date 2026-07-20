@@ -34,6 +34,11 @@ per-language tooling beyond CodeMirror defaults.
 > Single-user remains locked — but now understood as **single-user *per instance*** (each
 > self-hoster runs their own). A hosted multi-tenant service is deferred, not adopted — see D4 / O5.
 
+> **Updated by D15 (Phase 4):** "code execution" is reversed *for the desktop agent* — an
+> endpoint with real tools runs code by design. The **phone** still never runs a model or
+> executes code; the brain is always elsewhere. The native-iOS, on-device-LLM, and
+> no-hosted-service non-goals all still hold.
+
 ---
 
 ## 2. Open decisions — resolved this session
@@ -124,22 +129,23 @@ leaked JSON `read_file` call from `content`, and always request `think:false` so
 > protocol (native works for 2/3 and is the more standard path). `@`-attach remains the manual fallback.
 
 ### ✅ D11 (post-Phase-2 direction) — Pivot: tether becomes a thin client for agent *endpoints*
-*Confirmed 2026-07-17* after the product review (`docs/feedback-2026-07-17-desktop-agent-direction.md`).
+*Confirmed 2026-07-17* after the product review (the desktop-agent direction call).
 The north star shifts from "smart GitHub editor" to "thin mobile client for capable agent
 endpoints" — local (Ollama) and cloud (OpenRouter, Anthropic API) now, and a **desktop agent**
-(`fam-x` / Claude Code, with real shell/fs/web tools + the Claude subscription) later. **Sequenced
+(Claude Code / the Agent SDK, or your own runtime — real shell/fs/web tools) later. **Sequenced
 so nothing is wasted or prematurely deleted:**
 > - **Phase 3 (`SPEC-phase3.md`) — foundation, reverses NO locked decision:** a `Provider`
 >   abstraction behind the Ollama-only client, OpenRouter + Anthropic-API adapters, chat-page
 >   model/endpoint selection, nav clarity. GitHub browse/edit/commit **stays functional.**
-> - **Phase 4 — the desktop agent, gated on `fam-x` exposing a servable API** (today `fam` is a
->   terminal binary, not a server): this is where 🔒4 (no backend), 🔒3 (GitHub as source of truth),
->   🔒7 (Ollama-only transport), and the "no code execution / thin-client" non-goals get **reversed**,
->   and the GitHub editor/diff/commit code retires. **Those reversals are ratified here when Phase 4
->   is designed — not before.**
-> - **Phase 3.5:** multi-chat (sessions layer on the Provider abstraction).
+> - **Phase 4 — the desktop agent, gated on it exposing a servable API** (a CLI-only agent must
+>   grow an HTTP/SSE server first): this is where 🔒4 (no backend), 🔒7 (Ollama-only transport), and
+>   the "no code execution / thin-client" non-goals get **reversed**, and GitHub is demoted to one
+>   capability. **Those reversals are ratified when Phase 4 is designed — and they are, in D15,
+>   which softened 🔒3: GitHub editing is *kept* (demoted), not retired.**
+> - **Multi-chat** (the sessions layer on the Provider abstraction) landed *inside* Phase 3 (D14 /
+>   P3-T7), not as a separate step.
 > Note: the Claude *subscription* is reachable only via Claude Code / Agent SDK as a desktop endpoint
-> (Phase 4), never by scraping claude.ai; that is distinct from `fam`'s Anthropic **API-key** routing.
+> (Phase 4), never by scraping claude.ai; that is distinct from an agent's own Anthropic **API-key** routing.
 
 ### ✅ D12 (Phase 3, P3-T1) — Provider abstraction behind the Ollama client
 *Confirmed during P3-T1.* Generalized the Ollama-only `src/llm/client.ts` into a `Provider`
@@ -176,6 +182,22 @@ dropped, status reset). Same-Ollama-box concurrency is surfaced honestly with a 
 > data (IndexedDB is simpler for small structured JSON); client-side request serialization for the
 > same box (Ollama's job, not the thin client's).
 
+### ✅ D15 (Phase 4 direction) — Desktop agent: thin client for any agent endpoint
+*Confirmed 2026-07-18 (direction interview; SPEC-phase4.md).* Phase 4 makes tether a thin client
+for a **desktop agent** — an endpoint that runs its own tools (shell/fs/web) server-side. tether
+speaks **one generic HTTP/SSE agent-endpoint protocol** (OpenAI-compat, reusing the D12 `Provider`
+abstraction) and never knows *which* agent it talks to; the agent — and any bridge that exposes it —
+is **desktop-side config, never tether code** (the "any agent" requirement; the self-hoster's private
+setup). **Reversals ratified:** 🔒4 (no backend) → a **desktop daemon** (the agent, or a small bridge
+in front of it) runs on the *user's* desktop over Tailscale (still **no hosted** backend, single-user
+holds); the "no code execution" and "thin-client-is-editor" non-goals → the desktop agent executes
+code by design, the phone stays thin; 🔒7 already generalized (Phase 3). **🔒3 is *softened*, not
+dropped:** GitHub is one capability but **editing stays** (demoted, not retired). The reference agent
+and any transport bridge are the self-hoster's private choice, never in the public repo.
+> Rejected: agent-specific or transport-specific code in the public PWA (stay generic); a hosted
+> multi-tenant backend (🔒4 single-user holds); a chat-transport client inside the PWA (collides with
+> the agent's own connections, not browser-clean); retiring the GitHub editor (kept per the interview).
+
 ---
 
 ## 3. Decisions still genuinely open (flag before the phase that needs them)
@@ -183,7 +205,7 @@ dropped, status reset). Same-Ollama-box concurrency is surfaced honestly with a 
 | # | Decision | Needed by | Leaning |
 |---|----------|-----------|---------|
 | ❓ O1 | Ollama default model + params (e.g. `qwen2.5-coder:7b` vs `:14b`, context length) | Phase 2 | `qwen2.5-coder:7b` default on 12GB (14B is context-starved); **MUST be a runtime setting** (per D4), not hard-coded. |
-| ❓ O3 | App icon / brand assets source | Phase 0 (manifest needs icons) | Placeholder generated icon set now; real assets later. |
+| ✅ O3 | App icon / brand assets source | Phase 0 (manifest needs icons) | **Resolved:** the tether "t" monogram shipped (commit 2402ac8), generated by `scripts/gen-icons.py` (Pillow). |
 | ❓ O4 | Custom domain for Pages vs default `*.github.io` | Phase 0 deploy | Default domain for MVP; custom domain is cosmetic. |
 | ❓ O5 | Hosted multi-user service (others use shared hardware) | Deferred — post-MVP, only if pursued | If ever adopted: engine → vLLM/SGLang (batching), add auth, exposure beyond the tailnet (Funnel / real host), abuse + cost controls — and the single-user Non-goal gets revisited. D4's configurability keeps the door open; **do not build now.** |
 

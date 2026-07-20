@@ -19,7 +19,7 @@ tether/
 ├── package.json                # Deps + scripts (dev/build/preview/deploy)
 ├── vite.config.ts              # Vite config: base path for Pages, vite-plugin-pwa (manifest + SW)
 ├── tsconfig.json               # TypeScript config (bundler mode)
-├── scripts/gen-icons.py        # Dependency-free placeholder PWA icon generator
+├── scripts/gen-icons.py        # PWA icon generator (tether "t" monogram; requires Pillow)
 ├── .github/
 │   └── workflows/
 │       └── deploy.yml          # Build + deploy dist/ to GitHub Pages on push

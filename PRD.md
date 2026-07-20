@@ -4,6 +4,13 @@
 > **Owner:** Salahuddin
 > **One-liner:** A home-screen PWA code editor for iPhone that edits your GitHub repos and writes code with your *desktop's* local LLM — the phone is a thin client, your RTX rig is the brain.
 
+> ⚠ **Historical seed — the direction has since evolved.** This is the original planning
+> document. tether pivoted from "smart GitHub editor + local LLM" to a **thin client for
+> capable agent endpoints** (local + cloud models now, a desktop *agent* next). The current
+> plan lives in **[ROADMAP.md](ROADMAP.md)** and **[DECISIONS.md](DECISIONS.md)** (esp. D5 /
+> D11 / D15); Phases 0–2 shipped close to this doc, Phase 3+ supersede its "multi-file commits /
+> full loop" framing. Kept as the origin story, not the current spec.
+
 -----
 
 ## 1. Problem & motivation

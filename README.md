@@ -2,16 +2,16 @@
 
 # tether
 
-**Your iPhone, tethered to your desktop's GPU.**
+**Your iPhone, tethered to your desktop's brain.**
 
-A home-screen PWA that edits your GitHub repos and writes code with your desktop's
-local LLM. The phone is a thin client; your desktop — Ollama on an RTX GPU, reached
-over Tailscale — is the brain.
+A home-screen PWA that turns your phone into a thin client for capable AI — your desktop's
+**local** models, **cloud** models, and (next) your own desktop **agent** with real tools.
+The phone stays thin; the brain — reached privately over Tailscale — does the work.
 
 No backend. No App Store. No Mac in the build loop.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-00FF66.svg)](LICENSE)
-![Status](https://img.shields.io/badge/status-Phase%203%20·%20multi--provider-00FF66.svg)
+![Status](https://img.shields.io/badge/status-Phase%203%20·%20live-00FF66.svg)
 ![PWA](https://img.shields.io/badge/PWA-installable-3b82f6.svg)
 ![Platform](https://img.shields.io/badge/platform-iOS%20Safari-lightgrey.svg)
 
@@ -27,53 +27,58 @@ desk, that capability is stranded. iOS editors (Working Copy, Textastic, Koder) 
 you git and a text surface — none of them reach back into *your own* local inference.
 And native iOS dev is gated behind a Mac you may not have.
 
-**tether closes that gap:** a phone-sized window into your desktop's model and your
-GitHub repos, built entirely in web tech so it ships without ever touching Xcode.
+**tether closes that gap:** a phone-sized window onto capable AI — your desktop's model, a
+cloud endpoint, or (next) your own desktop agent — built entirely in web tech so it ships
+without ever touching Xcode. It started as a mobile GitHub editor; it's becoming a thin
+client for *any* agent endpoint (see the **[roadmap](ROADMAP.md)**).
 
 ## How it works
 
 ```
   iPhone (PWA, installed to home screen)
-  ┌──────────────────────────────────┐
-  │  CodeMirror 6 editor             │
-  │  GitHub client  ──── HTTPS ─────▶ api.github.com      (Contents / Git Data API)
-  │  LLM client     ──── HTTPS ─────▶ Tailscale Serve ──▶ Ollama :11434  (your desktop)
-  │  OPFS + IndexedDB (on-device cache)
-  │  Service worker + manifest       │
-  └──────────────────────────────────┘
+  ┌────────────────────────────────────┐
+  │  Chat / agent surface ── HTTPS ──▶  your endpoint, over Tailscale or browser-direct:
+  │                                       • Ollama — local model         (live)
+  │                                       • OpenRouter / Anthropic — cloud   (live)
+  │                                       • your desktop agent — real tools ← Phase 4 · planned
+  │  GitHub client        ── HTTPS ──▶  api.github.com   (browse · edit · commit — live)
+  │  CodeMirror 6 · OPFS + IndexedDB (on-device cache) · service worker + manifest
+  └────────────────────────────────────┘
 ```
 
-- **Editing** happens on the phone (CodeMirror 6).
-- **Inference** happens on *your* desktop (Ollama over Tailscale). The phone never runs a model.
-- **Source of truth** is GitHub. The phone cache is disposable, never canonical.
-- **No server of your own** — the browser talks directly to GitHub and to your Ollama.
+- **The brain is elsewhere** — a model or agent on *your* desktop (over Tailscale) or a cloud
+  endpoint you choose. The phone never runs it.
+- **The phone is a chat client** — plus a CodeMirror editor for the GitHub side.
+- **GitHub is one capability** — browse, edit, and commit a file, browser-direct. Source of
+  truth stays on GitHub; the phone cache is disposable.
+- **No server of your own** — everything is browser-direct: to GitHub today, and (as the phases
+  land) to cloud providers and your own desktop daemon over Tailscale. Nothing hosted in between.
 
-Everything personal — your GitHub token, your Ollama URL, your model — is a **runtime
-setting entered in the app**, never baked into source. Bring your own repos and your
-own GPU.
+Everything personal — your GitHub token, endpoint URLs, API keys, model — is a **runtime
+setting entered in the app**, never baked into source. Bring your own repos and your own brain.
 
 ## Status & roadmap
 
-tether ships in phases, each with a hard stop signal. It's early — here's exactly where things stand:
+tether ships in phases, each with a hard **stop signal**. Where it stands (2026-07):
 
 | Phase | Delivers | State |
 |------|----------|-------|
-| **0 · Skeleton** | Installable PWA + offline shell + CodeMirror editor on a local buffer | ✅ Done |
-| **1 · GitHub** | PAT auth, browse a repo, open/edit/commit a file from the phone | ✅ Done |
-| **2 · Chat-first agent** | Streaming chat with your desktop model, `read_file` tool loop, diff-before-commit, apply → commit | ✅ Done |
-| **3 · Multi-provider thin client** | One `Provider` abstraction over local Ollama **and** cloud (OpenRouter, Anthropic API); pick provider+model on the chat page; concurrent multi-chat; labeled bottom-tab nav | 🟡 **In review** |
+| **0–2 · Skeleton → GitHub → Chat-first agent** | Installable PWA; browse/edit/commit a repo; streaming chat + `read_file` + diff-before-commit with your desktop model | ✅ Done |
+| **3 · Multi-provider thin client** | Local Ollama **+ cloud** (OpenRouter, Anthropic) behind one `Provider` abstraction; pick provider+model in chat; concurrent multi-chat | ✅ Live |
+| **4 · Desktop agent** | A generic HTTP/SSE **agent** endpoint — an agent that runs its *own* tools; GitHub demoted to a side capability | 🔵 Planned |
 
-> **Direction ([D11](DECISIONS.md)):** tether is pivoting from "smart GitHub editor" to a **thin
-> client for capable agent endpoints** — local and cloud now, a desktop agent (fam-x / Claude Code)
-> next. Phase 3 lays that foundation without reversing any locked decision; GitHub browse/edit/commit
-> stays fully functional. See [`SPEC-phase3.md`](SPEC-phase3.md), [`PRD.md`](PRD.md),
-> [`DECISIONS.md`](DECISIONS.md), and [`docs/`](docs/) for the plan and rationale.
+**The direction ([D11](DECISIONS.md) / [D15](DECISIONS.md)):** tether pivoted from "smart GitHub
+editor" to a **thin client for capable agent endpoints** — local + cloud models shipped, your
+desktop *agent* next. GitHub editing rides along as one capability, not the point. The full journey and rationale:
+**[ROADMAP.md](ROADMAP.md)** · [`DECISIONS.md`](DECISIONS.md) · the phase specs
+([2](SPEC.md) · [3](SPEC-phase3.md) · [4](SPEC-phase4.md)).
 
 ## Tech
 
 Vite · React · TypeScript · Tailwind (dark-first, `#00FF66` accent) · CodeMirror 6 ·
-`vite-plugin-pwa` (manifest + Workbox service worker) · deployed as static files to
-GitHub Pages. No backend, no database.
+a small `Provider` abstraction (Ollama / OpenAI-compat / Anthropic adapters) ·
+`vite-plugin-pwa` (manifest + Workbox service worker) · static deploy to GitHub Pages.
+No backend, no database.
 
 ## Run it locally
 
@@ -84,7 +89,7 @@ npm run build      # type-check + static build to dist/
 npm run preview    # serve the production build
 ```
 
-Placeholder app icons are generated dependency-free by `python3 scripts/gen-icons.py`.
+App icons (the tether "t" monogram) are generated by `python scripts/gen-icons.py` (requires Pillow).
 
 ## Self-host your own instance
 
@@ -117,6 +122,10 @@ tailscale serve https / http://localhost:11434
 Scope Ollama to your own devices with Tailscale ACLs. Full spike notes:
 [`docs/spikes-phase2.md`](docs/spikes-phase2.md).
 
+> **Prefer cloud, or no desktop at all?** Cloud providers (OpenRouter / Anthropic — added in
+> Settings, called browser-direct) are **live (Phase 3)** — skip the desktop model entirely. A
+> **desktop agent** endpoint is Phase 4. See [`ROADMAP.md`](ROADMAP.md).
+
 **3. Bring a GitHub token (Phase 1).** Create a **fine-grained PAT** with
 **contents read/write** on just the repos you want, short expiry. You paste it into the
 app; it lives in on-device IndexedDB and never leaves the phone.
@@ -126,9 +135,10 @@ app; it lives in on-device IndexedDB and never leaves the phone.
 Deliberate non-goals — these keep the project small and the surface honest:
 
 - ❌ A native iOS app / App Store distribution
-- ❌ An on-device LLM (the whole point is your desktop's GPU)
-- ❌ A terminal or code execution on the phone
-- ❌ Multi-user, accounts, or real-time collaboration
+- ❌ The **phone** running a model or executing code — the brain is always elsewhere (your
+  desktop model, a cloud endpoint, or a desktop agent that has the hands)
+- ❌ A **hosted, multi-tenant** service — tether is single-user *per instance*; you self-host your copy
+- ❌ Accounts or real-time collaboration
 - ❌ Per-language tooling beyond what CodeMirror gives for free
 
 ## Contributing
