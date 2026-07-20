@@ -20,8 +20,8 @@ reshaped it:
 - **[D5](DECISIONS.md)** — the product should *feel like chatting with a coding agent*, not
   an editor with an LLM side-panel. The conversation became the centerpiece.
 - **[D11](DECISIONS.md)** — the real pivot: stop being a "smart GitHub editor," become a
-  **thin client for capable agent *endpoints***. Local models shipped, cloud in review; a
-  desktop *agent* next.
+  **thin client for capable agent *endpoints***. Local + cloud models shipped; a desktop
+  *agent* next.
 - **[D15](DECISIONS.md)** — the end-state: the desktop grows **hands** (shell / filesystem /
   web). The phone stays thin; the brain upgrades from a *model* to an *agent*.
 
@@ -37,7 +37,7 @@ longer the point.
 | **0 · Skeleton** | Installable PWA, offline app-shell, CodeMirror editor on a local buffer | Installs to the home screen; type in a highlighted buffer | ✅ **Done** |
 | **1 · GitHub** | Fine-grained PAT auth; browse a repo; open / edit / **commit** a file from the phone | Pull a file, edit it, watch the commit land on GitHub | ✅ **Done** |
 | **2 · Chat-first agent** | Streaming chat with your desktop model; `read_file` tool loop; diff-before-commit; apply → commit | Ask the desktop model, get a streamed answer, apply an edit | ✅ **Done** |
-| **3 · Multi-provider thin client** | One `Provider` abstraction over **local Ollama + cloud** (OpenRouter, Anthropic); pick provider+model on the chat page; **concurrent multi-chat**; labeled bottom-tab nav | Two chats at once, each switched between a local and a cloud model, both streaming | 🟡 **In review** ([PR #8](https://github.com/salahuddinuqaili/tether/pull/8)) |
+| **3 · Multi-provider thin client** | One `Provider` abstraction over **local Ollama + cloud** (OpenRouter, Anthropic); pick provider+model on the chat page; **concurrent multi-chat**; labeled bottom-tab nav | Two chats at once, each switched between a local and a cloud model, both streaming | ✅ **Done** |
 | **4 · Desktop agent** | A generic **HTTP/SSE agent-endpoint** kind — an endpoint that runs its *own* tools (shell/fs/web); the phone streams its work. GitHub demoted to a side capability | Chat with your desktop agent, watch it run tools + stream the result — with GitHub still working | 🔵 **Planned** ([`SPEC-phase4.md`](SPEC-phase4.md)) |
 
 Each shipped phase has a spec: Phase 2 [`SPEC.md`](SPEC.md), Phase 3 [`SPEC-phase3.md`](SPEC-phase3.md),

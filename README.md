@@ -11,7 +11,7 @@ The phone stays thin; the brain — reached privately over Tailscale — does th
 No backend. No App Store. No Mac in the build loop.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-00FF66.svg)](LICENSE)
-![Status](https://img.shields.io/badge/status-Phase%203%20·%20in%20review-f5a623.svg)
+![Status](https://img.shields.io/badge/status-Phase%203%20·%20live-00FF66.svg)
 ![PWA](https://img.shields.io/badge/PWA-installable-3b82f6.svg)
 ![Platform](https://img.shields.io/badge/platform-iOS%20Safari-lightgrey.svg)
 
@@ -39,7 +39,7 @@ client for *any* agent endpoint (see the **[roadmap](ROADMAP.md)**).
   ┌────────────────────────────────────┐
   │  Chat / agent surface ── HTTPS ──▶  your endpoint, over Tailscale or browser-direct:
   │                                       • Ollama — local model         (live)
-  │                                       • OpenRouter / Anthropic — cloud   ← Phase 3 · in review
+  │                                       • OpenRouter / Anthropic — cloud   (live)
   │                                       • your desktop agent — real tools ← Phase 4 · planned
   │  GitHub client        ── HTTPS ──▶  api.github.com   (browse · edit · commit — live)
   │  CodeMirror 6 · OPFS + IndexedDB (on-device cache) · service worker + manifest
@@ -64,12 +64,12 @@ tether ships in phases, each with a hard **stop signal**. Where it stands (2026-
 | Phase | Delivers | State |
 |------|----------|-------|
 | **0–2 · Skeleton → GitHub → Chat-first agent** | Installable PWA; browse/edit/commit a repo; streaming chat + `read_file` + diff-before-commit with your desktop model | ✅ Done |
-| **3 · Multi-provider thin client** | Local Ollama **+ cloud** (OpenRouter, Anthropic) behind one `Provider` abstraction; pick provider+model in chat; concurrent multi-chat | 🟡 In review |
+| **3 · Multi-provider thin client** | Local Ollama **+ cloud** (OpenRouter, Anthropic) behind one `Provider` abstraction; pick provider+model in chat; concurrent multi-chat | ✅ Live |
 | **4 · Desktop agent** | A generic HTTP/SSE **agent** endpoint — an agent that runs its *own* tools; GitHub demoted to a side capability | 🔵 Planned |
 
 **The direction ([D11](DECISIONS.md) / [D15](DECISIONS.md)):** tether pivoted from "smart GitHub
-editor" to a **thin client for capable agent endpoints** — local models shipped, cloud in review,
-your desktop *agent* next. GitHub editing rides along as one capability, not the point. The full journey and rationale:
+editor" to a **thin client for capable agent endpoints** — local + cloud models shipped, your
+desktop *agent* next. GitHub editing rides along as one capability, not the point. The full journey and rationale:
 **[ROADMAP.md](ROADMAP.md)** · [`DECISIONS.md`](DECISIONS.md) · the phase specs
 ([2](SPEC.md) · [3](SPEC-phase3.md) · [4](SPEC-phase4.md)).
 
@@ -123,8 +123,7 @@ Scope Ollama to your own devices with Tailscale ACLs. Full spike notes:
 [`docs/spikes-phase2.md`](docs/spikes-phase2.md).
 
 > **Prefer cloud, or no desktop at all?** Cloud providers (OpenRouter / Anthropic — added in
-> Settings, called browser-direct) land with **Phase 3, currently in review
-> ([PR #8](https://github.com/salahuddinuqaili/tether/pull/8)) — not yet in the `main` build.** A
+> Settings, called browser-direct) are **live (Phase 3)** — skip the desktop model entirely. A
 > **desktop agent** endpoint is Phase 4. See [`ROADMAP.md`](ROADMAP.md).
 
 **3. Bring a GitHub token (Phase 1).** Create a **fine-grained PAT** with
