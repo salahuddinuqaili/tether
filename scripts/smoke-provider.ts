@@ -12,7 +12,7 @@
 // Run (bash):
 //   OLLAMA_URL=http://localhost:11434 npx --yes tsx scripts/smoke-provider.ts
 //
-// Optional env: SMOKE_MODELS="qwen2.5:7b-instruct,qwen2.5-coder:14b" (comma list;
+// Optional env: SMOKE_MODELS="qwen2.5:7b-instruct,gemma4:e4b" (comma list;
 //   the first should support native tool_calls, the second may leak JSON).
 
 import { createOllamaProvider } from '../src/llm/providers'
@@ -21,7 +21,7 @@ import { parseProposedEdits } from '../src/chat/edits'
 import type { ChatMessage } from '../src/llm/providers'
 
 const URL = (process.env.OLLAMA_URL || 'http://localhost:11434').replace(/\/+$/, '')
-const MODELS = (process.env.SMOKE_MODELS || 'qwen2.5:7b-instruct,qwen2.5-coder:14b')
+const MODELS = (process.env.SMOKE_MODELS || 'qwen2.5:7b-instruct,gemma4:e4b')
   .split(',')
   .map((s) => s.trim())
   .filter(Boolean)

@@ -41,16 +41,16 @@ async function main() {
 
   // 1. Migration seeds a Phase 2 install's ollama_url/ollama_model as one endpoint.
   await setOllamaUrl('https://your-machine.example.ts.net/')
-  await setModel('qwen2.5-coder:14b')
+  await setModel('gemma4:e4b')
   await migrateLegacyOllama()
   let eps = await getEndpoints()
   eq(eps.length, 1, 'after migration: endpoint count')
   eq(eps[0]?.kind, 'ollama', 'migrated kind')
   eq(eps[0]?.baseUrl, 'https://your-machine.example.ts.net', 'migrated baseUrl (trailing slash stripped)')
-  eq(eps[0]?.model, 'qwen2.5-coder:14b', 'migrated model')
+  eq(eps[0]?.model, 'gemma4:e4b', 'migrated model')
   const binding0 = await getActiveBinding()
   eq(binding0?.endpoint.kind, 'ollama', 'active binding after migration is the ollama endpoint')
-  eq(binding0?.model, 'qwen2.5-coder:14b', 'active model after migration')
+  eq(binding0?.model, 'gemma4:e4b', 'active model after migration')
 
   // 2. Migration is idempotent (no duplicate on a second run).
   await migrateLegacyOllama()
